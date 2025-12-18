@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>期末舒壓烤肉大會 | 即時戰情室</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- PapaParse (CSV Parser) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #1a0b0b; /* 深紅黑色背景 */
+            color: #f3f4f6;
+        }
+
+        /* 火焰文字特效 */
+        .fire-text {
+            color: #f59e0b;
+            text-shadow: 
+                0px -2px 4px #ea580c,
+                0px -4px 10px #dc2626, 
+                0px -10px 20px #991b1b;
+        }
+
+        /* 霓虹邊框 */
+        .neon-border {
+            box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+            transition: all 0.3s ease;
+        }
+        .neon-border:hover {
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.8), inset 0 0 10px rgba(249, 115, 22, 0.2);
+            transform: translateY(-5px);
+        }
+
+        /* Loading Spinner */
+        .loader {
+            border: 8px solid #374151;
+            border-top: 8px solid #f97316;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 卡片背景紋理 */
+        .card-bg {
+            background: linear-gradient(145deg, #2a1010, #1f0808);
+            border: 1px solid #451a1a;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="fixed inset-0 z-50 bg-gray-900 flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="loader mb-4"></div>
+        <h2 class="text-xl font-bold text-orange-500 tracking-wider">正在讀取報名資料...</h2>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="bg-black/50 backdrop-blur-md border-b border-orange-900 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center gap-3">
+                    <i class="fa-solid fa-fire text-orange-500 text-2xl animate-pulse"></i>
+                    <span class="text-xl font-bold tracking-wider text-white">期末舒壓烤肉大會</span>
+                </div>
+                <div class="text-sm text-gray-400">
+                    <i class="fa-regular fa-clock mr-1"></i> 最後更新: <span id="last-updated">...</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8 space-y-8">
+
+        <!-- Hero Section -->
+        <div class="text-center py-10 relative overflow-hidden rounded-3xl neon-border card-bg mb-12">
+            <div class="absolute top-0 left-0 w-full h-full bg-[url('https://images.unsplash.com/photo-1555939594-58d7cb561ad1?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80')] bg-cover bg-center opacity-20 pointer-events-none"></div>
+            <div class="relative z-10">
+                <h1 class="text-5xl md:text-7xl font-black mb-4 fire-text">BBQ PARTY 2025</h1>
+                <p class="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">考完試就是要吃肉！即時追蹤報名現況，看看誰已經準備好開吃了。</p>
+                
+                <!-- Counter -->
+                <div class="inline-block p-6 rounded-2xl bg-black/60 border border-orange-500/30 backdrop-blur-sm">
+                    <p class="text-gray-400 text-sm uppercase tracking-widest mb-1">目前報名總人數</p>
+                    <div id="total-count" class="text-6xl font-black text-white">0</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards Row -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Card 1 -->
+            <div class="card-bg p-6 rounded-xl neon-border relative overflow-hidden group">
+                <div class="absolute -right-6 -top-6 bg-orange-600/20 w-32 h-32 rounded-full blur-2xl group-hover:bg-orange-600/30 transition-all"></div>
+                <div class="relative z-10 flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">最熱情年級</p>
+                        <h3 id="top-grade" class="text-3xl font-bold text-orange-400 mt-1">-</h3>
+                    </div>
+                    <i class="fa-solid fa-graduation-cap text-4xl text-gray-600 group-hover:text-orange-500 transition-colors"></i>
+                </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="card-bg p-6 rounded-xl neon-border relative overflow-hidden group">
+                <div class="absolute -right-6 -top-6 bg-green-600/20 w-32 h-32 rounded-full blur-2xl group-hover:bg-green-600/30 transition-all"></div>
+                <div class="relative z-10 flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">素食/特殊飲食</p>
+                        <h3 id="diet-stats" class="text-3xl font-bold text-green-400 mt-1">0 人</h3>
+                    </div>
+                    <i class="fa-solid fa-leaf text-4xl text-gray-600 group-hover:text-green-500 transition-colors"></i>
+                </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="card-bg p-6 rounded-xl neon-border relative overflow-hidden group">
+                <div class="absolute -right-6 -top-6 bg-blue-600/20 w-32 h-32 rounded-full blur-2xl group-hover:bg-blue-600/30 transition-all"></div>
+                <div class="relative z-10 flex items-center justify-between">
+                    <div>
+                        <p class="text-gray-400 text-sm">今日新增</p>
+                        <h3 id="today-new" class="text-3xl font-bold text-blue-400 mt-1">0</h3>
+                    </div>
+                    <i class="fa-solid fa-chart-line text-4xl text-gray-600 group-hover:text-blue-500 transition-colors"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- Grade Chart -->
+            <div class="card-bg p-6 rounded-xl border border-gray-800 shadow-xl">
+                <h3 class="text-xl font-bold mb-6 flex items-center">
+                    <i class="fa-solid fa-users mr-3 text-orange-500"></i> 各年級報名比例
+                </h3>
+                <div class="relative h-64 w-full">
+                    <canvas id="gradeChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Diet Chart -->
+            <div class="card-bg p-6 rounded-xl border border-gray-800 shadow-xl">
+                <h3 class="text-xl font-bold mb-6 flex items-center">
+                    <i class="fa-solid fa-utensils mr-3 text-orange-500"></i> 飲食偏好統計
+                </h3>
+                <div class="relative h-64 w-full">
+                    <canvas id="dietChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Timeline Chart (Full Width) -->
+            <div class="card-bg p-6 rounded-xl border border-gray-800 shadow-xl lg:col-span-2">
+                <h3 class="text-xl font-bold mb-6 flex items-center">
+                    <i class="fa-solid fa-fire-flame-curved mr-3 text-orange-500"></i> 報名熱度趨勢 (累積人數)
+                </h3>
+                <div class="relative h-80 w-full">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Signups (Privacy Protected) -->
+        <div class="card-bg p-6 rounded-xl border border-gray-800 shadow-xl mb-10">
+            <h3 class="text-xl font-bold mb-4 flex items-center">
+                <i class="fa-solid fa-list mr-3 text-orange-500"></i> 最新報名夥伴
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="text-gray-500 border-b border-gray-700 text-sm">
+                            <th class="p-3">報名時間</th>
+                            <th class="p-3">年級</th>
+                            <th class="p-3">姓名</th>
+                            <th class="p-3">備註</th>
+                        </tr>
+                    </thead>
+                    <tbody id="signup-list" class="text-gray-300 text-sm divide-y divide-gray-800">
+                        <!-- Data will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-black py-8 border-t border-gray-900 text-center text-gray-600 text-sm">
+        <p>&copy; 2025 期末舒壓烤肉大會籌備委員會. All Rights Reserved.</p>
+        <p class="mt-2">Data updated automatically from Google Sheets.</p>
+    </footer>
+
+    <script>
+        // 設定 CSV 來源 (從 Prompt 取得)
+        const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vT_RX7bodysq202ReHeYKNsrJPSu3LSyCEW88-AOUp0NNDEEieZPNrGymI16Ew2P27UIKuWzJwMuDu_/pub?output=csv';
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchData();
+        });
+
+        // 1. 抓取並解析資料
+        function fetchData() {
+            Papa.parse(CSV_URL, {
+                download: true,
+                header: true, // 假設第一行是標題
+                complete: function(results) {
+                    const data = results.data;
+                    console.log("Raw Data:", data);
+                    
+                    // 過濾掉空行 (Google Sheet 偶爾會有空行)
+                    const validData = data.filter(row => row['姓名'] && row['年級']);
+                    
+                    if (validData.length > 0) {
+                        processData(validData);
+                        hideLoading();
+                        updateLastUpdated();
+                    } else {
+                        // 如果沒有資料，顯示 Mock Data 方便演示效果
+                        console.warn("CSV empty or error, using mock data for demo.");
+                        useMockData();
+                    }
+                },
+                error: function(err) {
+                    console.error("Error fetching CSV:", err);
+                    alert("讀取資料失敗，請檢查網路連線或 CSV 權限。");
+                    useMockData(); // Fallback
+                }
+            });
+        }
+
+        // 隱藏 Loading 畫面
+        function hideLoading() {
+            const loader = document.getElementById('loading-screen');
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 500);
+        }
+
+        // 更新最後更新時間
+        function updateLastUpdated() {
+            const now = new Date();
+            document.getElementById('last-updated').innerText = now.toLocaleTimeString();
+        }
+
+        // 2. 資料處理核心邏輯
+        function processData(data) {
+            // 欄位名稱對應 (根據 Google Form 預設與您的設定)
+            // 通常是: 時間戳記, 姓名, 學號, Email, 年級, 飲食習慣, 備註
+            
+            // --- A. 基礎統計 ---
+            const total = data.length;
+            animateValue("total-count", 0, total, 1500);
+
+            // --- B. 年級分佈 ---
+            const gradeCounts = {};
+            data.forEach(row => {
+                const grade = row['年級'] || '未知';
+                gradeCounts[grade] = (gradeCounts[grade] || 0) + 1;
+            });
+
+            // 找出最多人的年級
+            let maxGrade = '-';
+            let maxVal = 0;
+            for (const [grade, count] of Object.entries(gradeCounts)) {
+                if (count > maxVal) {
+                    maxVal = count;
+                    maxGrade = grade;
+                }
+            }
+            document.getElementById('top-grade').innerText = maxGrade;
+
+            // --- C. 飲食習慣拆解 ---
+            // 飲食習慣是多選 (例如 "葷食, 不吃牛")，需要拆分
+            const dietCounts = { '葷食': 0, '素食': 0, '不吃牛': 0, '其他': 0 };
+            let specialDietCount = 0;
+
+            data.forEach(row => {
+                const dietStr = row['飲食習慣'] || '';
+                const diets = dietStr.split(',').map(s => s.trim());
+                
+                let isSpecial = false;
+                diets.forEach(d => {
+                    if (dietCounts.hasOwnProperty(d)) {
+                        dietCounts[d]++;
+                    } else if (d !== '') {
+                        dietCounts['其他']++;
+                    }
+                    
+                    if (d === '素食' || d === '不吃牛') isSpecial = true;
+                });
+                if (isSpecial) specialDietCount++;
+            });
+            
+            animateValue("diet-stats", 0, specialDietCount, 1500, " 人");
+
+            // --- D. 報名趨勢 (依日期) ---
+            // Google Timestamp 格式通常是 "2023/12/08 下午 12:30:00" 或 ISO
+            const dateCounts = {};
+            let todayCount = 0;
+            const todayStr = new Date().toLocaleDateString('zh-TW'); // 格式簡單化
+
+            data.forEach(row => {
+                const ts = row['時間戳記']; // Google Form 預設欄位名稱
+                if (ts) {
+                    const dateObj = new Date(ts);
+                    // 處理無效日期 (有些瀏覽器解析中文日期格式可能有問題，需視情況調整)
+                    // 這裡簡單取前10個字元做日期 Key (YYYY/MM/DD)
+                    let dateKey = ts.split(' ')[0]; 
+                    
+                    dateCounts[dateKey] = (dateCounts[dateKey] || 0) + 1;
+
+                    // 檢查是否為今日
+                    // 這裡僅做簡單字串比對，實際專案建議用 moment.js 或 day.js
+                    if (ts.includes(todayStr) || dateKey === todayStr) {
+                        todayCount++;
+                    }
+                }
+            });
+            
+            animateValue("today-new", 0, todayCount, 1000);
+
+            // 準備折線圖數據 (累積)
+            const sortedDates = Object.keys(dateCounts).sort();
+            const cumulativeData = [];
+            let acc = 0;
+            sortedDates.forEach(date => {
+                acc += dateCounts[date];
+                cumulativeData.push(acc);
+            });
+
+            // --- E. 渲染列表 (最新5筆) ---
+            renderSignupList(data.slice().reverse().slice(0, 5));
+
+            // --- F. 繪製圖表 ---
+            initCharts(gradeCounts, dietCounts, sortedDates, cumulativeData);
+        }
+
+        // 3. 渲染圖表
+        function initCharts(gradeCounts, dietCounts, dates, cumulativeData) {
+            Chart.defaults.color = '#9ca3af';
+            Chart.defaults.borderColor = '#374151';
+
+            // 1. 年級圖表 (Doughnut)
+            const ctxGrade = document.getElementById('gradeChart').getContext('2d');
+            new Chart(ctxGrade, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(gradeCounts),
+                    datasets: [{
+                        data: Object.values(gradeCounts),
+                        backgroundColor: [
+                            '#f97316', // Orange
+                            '#ea580c', // Dark Orange
+                            '#fbbf24', // Amber
+                            '#ef4444', // Red
+                            '#6b7280'  // Gray
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' }
+                    }
+                }
+            });
+
+            // 2. 飲食圖表 (Bar)
+            const ctxDiet = document.getElementById('dietChart').getContext('2d');
+            new Chart(ctxDiet, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(dietCounts),
+                    datasets: [{
+                        label: '人數',
+                        data: Object.values(dietCounts),
+                        backgroundColor: [
+                            '#ef4444', // 葷
+                            '#22c55e', // 素
+                            '#eab308', // 不牛
+                            '#9ca3af'  // 其他
+                        ],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true, ticks: { precision: 0 } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // 3. 趨勢圖表 (Line)
+            const ctxTime = document.getElementById('timelineChart').getContext('2d');
+            
+            // 建立漸層背景
+            const gradient = ctxTime.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(249, 115, 22, 0.5)'); // Orange
+            gradient.addColorStop(1, 'rgba(249, 115, 22, 0.0)');
+
+            new Chart(ctxTime, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: '累積報名人數',
+                        data: cumulativeData,
+                        borderColor: '#f97316',
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#f97316',
+                        pointRadius: 4,
+                        fill: true,
+                        tension: 0.4 // 平滑曲線
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true }
+                    },
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        }
+                    },
+                    interaction: {
+                        mode: 'nearest',
+                        axis: 'x',
+                        intersect: false
+                    }
+                }
+            });
+        }
+
+        // 4. 渲染報名列表 (含隱私處理)
+        function renderSignupList(rows) {
+            const tbody = document.getElementById('signup-list');
+            tbody.innerHTML = '';
+
+            rows.forEach(row => {
+                // 姓名遮罩: 王大明 -> 王O明
+                let rawName = row['姓名'] || '神秘人';
+                let maskedName = rawName;
+                if (rawName.length > 2) {
+                    maskedName = rawName[0] + 'O' + rawName.substring(2);
+                } else if (rawName.length === 2) {
+                    maskedName = rawName[0] + 'O';
+                }
+
+                // 備註截斷
+                let remark = row['備註'] || '-';
+                if (remark.length > 15) remark = remark.substring(0, 15) + '...';
+
+                // 時間簡化
+                let time = row['時間戳記'] ? row['時間戳記'].split(' ')[0] : '剛剛';
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-white/5 transition-colors";
+                tr.innerHTML = `
+                    <td class="p-3 text-orange-400 font-mono text-xs">${time}</td>
+                    <td class="p-3"><span class="px-2 py-1 bg-gray-800 rounded text-xs border border-gray-700">${row['年級']}</span></td>
+                    <td class="p-3 font-bold">${maskedName}</td>
+                    <td class="p-3 text-gray-500 italic text-xs">${remark}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 工具: 數字滾動動畫
+        function animateValue(id, start, end, duration, suffix = "") {
+            if (start === end) return;
+            const range = end - start;
+            let current = start;
+            const increment = end > start ? 1 : -1;
+            const stepTime = Math.abs(Math.floor(duration / range));
+            const obj = document.getElementById(id);
+            
+            const timer = setInterval(function() {
+                current += increment;
+                obj.innerHTML = current + suffix;
+                if (current == end) {
+                    clearInterval(timer);
+                }
+            }, Math.max(stepTime, 20)); // 最快20ms更新一次
+        }
+
+        // Fallback: 如果 CSV 讀取失敗或為空，生成假資料展示
+        function useMockData() {
+            const mockData = [
+                { '時間戳記': '2025/12/01 10:00:00', '姓名': '王大明', '年級': '大一', '飲食習慣': '葷食', '備註': '期待！' },
+                { '時間戳記': '2025/12/02 11:30:00', '姓名': '李小華', '年級': '大二', '飲食習慣': '素食', '備註': '' },
+                { '時間戳記': '2025/12/02 14:20:00', '姓名': '陳志豪', '年級': '大一', '飲食習慣': '葷食, 不吃牛', '備註': '可以帶朋友嗎？' },
+                { '時間戳記': '2025/12/03 09:10:00', '姓名': '林雅婷', '年級': '大三', '飲食習慣': '葷食', '備註': '' },
+                { '時間戳記': '2025/12/03 16:50:00', '姓名': '張建國', '年級': '大四', '飲食習慣': '不吃牛', '備註': '辛苦了' },
+                { '時間戳記': '2025/12/04 10:00:00', '姓名': '趙敏', '年級': '大一', '飲食習慣': '葷食', '備註': '' },
+                { '時間戳記': '2025/12/05 12:00:00', '姓名': '孫悟空', '年級': '大二', '飲食習慣': '素食', '備註': '有香蕉嗎' },
+            ];
+            // 複製更多資料以豐富圖表
+            for(let i=0; i<15; i++) {
+                mockData.push({
+                    '時間戳記': `2025/12/0${6 + (i%3)} 10:00:00`,
+                    '姓名': `同學${i}`, 
+                    '年級': ['大一','大二','大三','大四'][Math.floor(Math.random()*4)], 
+                    '飲食習慣': Math.random() > 0.8 ? '素食' : '葷食',
+                    '備註': ''
+                });
+            }
+            
+            hideLoading();
+            processData(mockData);
+            
+            // 提示使用者目前是假資料
+            const navbar = document.querySelector('nav div');
+            const alertBadge = document.createElement('span');
+            alertBadge.className = "ml-4 px-2 py-1 bg-red-600 text-white text-xs rounded animate-pulse";
+            alertBadge.innerText = "Demo 模式 (使用模擬資料)";
+            navbar.appendChild(alertBadge);
+        }
+    </script>
+</body>
+</html>

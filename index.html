@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作品集 | 台中科技大學 網頁程式設計</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #f8fafc;
+            scroll-behavior: smooth;
+        }
+
+        /* 自定義漸層文字 */
+        .text-gradient {
+            background: linear-gradient(to right, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* 卡片懸浮特效 */
+        .project-card {
+            transition: all 0.3s ease;
+        }
+        .project-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        /* 裝飾背景 */
+        .bg-pattern {
+            background-color: #ffffff;
+            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 flex flex-col min-h-screen bg-pattern">
+
+    <!-- 導覽列 -->
+    <nav class="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- LOGO / 學校名稱 -->
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
+                        N
+                    </div>
+                    <span class="font-bold text-xl tracking-tight text-slate-700">NUTC 網頁程式設計</span>
+                </div>
+                
+                <!-- 右側連結 -->
+                <div class="hidden md:flex space-x-8">
+                    <a href="#about" class="text-slate-500 hover:text-blue-600 transition-colors">關於課程</a>
+                    <a href="#portfolio" class="text-slate-500 hover:text-blue-600 transition-colors">作品集</a>
+                    <a href="https://www.nutc.edu.tw/" target="_blank" class="text-slate-500 hover:text-blue-600 transition-colors">學校官網</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero 區塊 -->
+    <header id="about" class="relative pt-20 pb-16 md:pt-32 md:pb-24 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center md:text-left">
+        <div class="md:flex items-center gap-12">
+            <div class="md:w-1/2 mb-10 md:mb-0">
+                <span class="inline-block py-1 px-3 rounded-full bg-blue-100 text-blue-600 text-sm font-semibold mb-4">
+                    114-1 學期作品集
+                </span>
+                <h1 class="text-4xl md:text-6xl font-black tracking-tight leading-tight mb-6">
+                    探索我的 <br>
+                    <span class="text-gradient">網頁程式設計之旅</span>
+                </h1>
+                <p class="text-lg text-slate-600 mb-8 leading-relaxed">
+                    這是我的期中與平時練習成果展示。在這裡，你可以看到我如何運用 HTML, CSS, JavaScript 以及 API 串接技術，打造出有趣的互動網頁。
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center md:justify-start">
+                    <a href="#portfolio" class="px-8 py-3 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition-colors shadow-lg hover:shadow-blue-500/30 flex items-center justify-center gap-2">
+                        瀏覽作品 <i class="fa-solid fa-arrow-down"></i>
+                    </a>
+                    <a href="https://github.com/" target="_blank" class="px-8 py-3 bg-white text-slate-700 border border-slate-300 rounded-full font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-brands fa-github"></i> GitHub
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 右側裝飾圖 (FontAwesome 組合) -->
+            <div class="md:w-1/2 flex justify-center relative">
+                <div class="absolute inset-0 bg-gradient-to-tr from-blue-300/30 to-purple-300/30 rounded-full blur-3xl -z-10"></div>
+                <div class="grid grid-cols-2 gap-4 p-4 rotate-3 hover:rotate-0 transition-transform duration-500">
+                    <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center justify-center aspect-square">
+                        <i class="fa-brands fa-html5 text-6xl text-orange-500 mb-2"></i>
+                        <span class="font-bold text-slate-600">HTML5</span>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center justify-center aspect-square mt-8">
+                        <i class="fa-brands fa-css3-alt text-6xl text-blue-500 mb-2"></i>
+                        <span class="font-bold text-slate-600">CSS3</span>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center justify-center aspect-square -mt-8">
+                        <i class="fa-brands fa-js text-6xl text-yellow-400 mb-2"></i>
+                        <span class="font-bold text-slate-600">JavaScript</span>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center justify-center aspect-square">
+                        <i class="fa-solid fa-code text-6xl text-purple-500 mb-2"></i>
+                        <span class="font-bold text-slate-600">API</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 作品集區塊 -->
+    <main id="portfolio" class="flex-grow py-16 bg-white border-t border-slate-200">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">精選作品</h2>
+                <div class="w-20 h-1 bg-blue-600 mx-auto rounded-full"></div>
+                <p class="mt-4 text-slate-500">點擊卡片即可查看完整專案</p>
+            </div>
+
+            <!-- Grid 佈局 -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                
+                <!-- 作品 1: 氣象站 -->
+                <a href="./weather.html" target="_blank" class="block group">
+                    <div class="project-card bg-white rounded-2xl overflow-hidden border border-slate-200 h-full flex flex-col">
+                        <!-- 預覽圖區域 -->
+                        <div class="h-48 bg-yellow-100 flex items-center justify-center relative overflow-hidden">
+                            <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1590055531615-f16d36ffe8ec?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')] bg-cover bg-center opacity-20 group-hover:scale-110 transition-transform duration-500"></div>
+                            <div class="relative z-10 text-center">
+                                <i class="fa-solid fa-bolt text-5xl text-yellow-500 drop-shadow-md mb-2 group-hover:animate-bounce"></i>
+                                <h3 class="font-bold text-slate-800">皮卡丘電力氣象</h3>
+                            </div>
+                        </div>
+                        <!-- 內容 -->
+                        <div class="p-6 flex-grow">
+                            <div class="flex gap-2 mb-3">
+                                <span class="text-xs px-2 py-1 bg-yellow-100 text-yellow-700 rounded-md font-medium">Fetch API</span>
+                                <span class="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-md font-medium">CSS Animation</span>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2 group-hover:text-blue-600 transition-colors">皮卡丘氣象站</h3>
+                            <p class="text-slate-500 text-sm leading-relaxed">
+                                結合寶可夢風格的天氣查詢網頁。使用 OpenWeatherMap 或自定義 API 獲取即時天氣資訊，並根據時間顯示不同的皮卡丘互動描述。
+                            </p>
+                        </div>
+                        <div class="p-6 pt-0 mt-auto border-t border-slate-100">
+                            <span class="text-blue-600 text-sm font-semibold flex items-center gap-2 group-hover:translate-x-2 transition-transform">
+                                查看作品 <i class="fa-solid fa-arrow-right"></i>
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- 作品 2: 烤肉大會 -->
+                <a href="./BBQ.html" target="_blank" class="block group">
+                    <div class="project-card bg-white rounded-2xl overflow-hidden border border-slate-200 h-full flex flex-col">
+                        <!-- 預覽圖區域 -->
+                        <div class="h-48 bg-orange-100 flex items-center justify-center relative overflow-hidden">
+                            <div class="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1529193591184-b1d580690dd0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')] bg-cover bg-center opacity-20 group-hover:scale-110 transition-transform duration-500"></div>
+                            <div class="relative z-10 text-center">
+                                <i class="fa-solid fa-fire text-5xl text-orange-600 drop-shadow-md mb-2 group-hover:animate-pulse"></i>
+                                <h3 class="font-bold text-slate-800">期末舒壓烤肉</h3>
+                            </div>
+                        </div>
+                        <!-- 內容 -->
+                        <div class="p-6 flex-grow">
+                            <div class="flex gap-2 mb-3">
+                                <span class="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded-md font-medium">Chart.js</span>
+                                <span class="text-xs px-2 py-1 bg-slate-100 text-slate-600 rounded-md font-medium">PapaParse</span>
+                            </div>
+                            <h3 class="text-xl font-bold mb-2 group-hover:text-blue-600 transition-colors">烤肉活動戰情室</h3>
+                            <p class="text-slate-500 text-sm leading-relaxed">
+                                解析 Google Sheets CSV 報名資料，即時呈現視覺化統計圖表。包含報名趨勢、年級分佈與飲食習慣分析的儀表板。
+                            </p>
+                        </div>
+                        <div class="p-6 pt-0 mt-auto border-t border-slate-100">
+                            <span class="text-blue-600 text-sm font-semibold flex items-center gap-2 group-hover:translate-x-2 transition-transform">
+                                查看作品 <i class="fa-solid fa-arrow-right"></i>
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- 未來作品 (佔位符) -->
+                <div class="project-card bg-slate-50 rounded-2xl overflow-hidden border border-dashed border-slate-300 h-full flex flex-col items-center justify-center text-center p-8 opacity-75 hover:opacity-100">
+                    <div class="w-16 h-16 bg-slate-200 rounded-full flex items-center justify-center mb-4 text-slate-400">
+                        <i class="fa-solid fa-plus text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-600 mb-2">更多作品開發中</h3>
+                    <p class="text-slate-500 text-sm mb-6">
+                        期末專題、課堂練習將陸續上架...
+                    </p>
+                    <span class="px-4 py-2 bg-slate-200 text-slate-600 rounded-full text-xs font-semibold">
+                        Coming Soon
+                    </span>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- 頁尾 -->
+    <footer class="bg-slate-900 text-slate-400 py-12">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h4 class="text-white text-lg font-bold mb-4">關於這個作品集</h4>
+                    <p class="text-sm leading-relaxed">
+                        這是國立臺中科技大學 114學年度第1學期<br>
+                        網頁程式設計課程的期末成果展示。<br>
+                        由 Tailwind CSS 強力驅動。
+                    </p>
+                </div>
+                <div>
+                    <h4 class="text-white text-lg font-bold mb-4">快速連結</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="#about" class="hover:text-blue-400 transition-colors">關於課程</a></li>
+                        <li><a href="#portfolio" class="hover:text-blue-400 transition-colors">作品列表</a></li>
+                        <li><a href="./weather.html" class="hover:text-blue-400 transition-colors">皮卡丘氣象站</a></li>
+                        <li><a href="./BBQ.html" class="hover:text-blue-400 transition-colors">期末烤肉大會</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white text-lg font-bold mb-4">聯絡資訊</h4>
+                    <p class="text-sm mb-2"><i class="fa-solid fa-envelope mr-2"></i> student@nutc.edu.tw</p>
+                    <p class="text-sm"><i class="fa-solid fa-location-dot mr-2"></i> 台中市北區三民路三段129號</p>
+                    <div class="mt-4 flex space-x-4">
+                        <a href="#" class="text-slate-400 hover:text-white text-xl"><i class="fa-brands fa-github"></i></a>
+                        <a href="#" class="text-slate-400 hover:text-white text-xl"><i class="fa-brands fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="border-t border-slate-800 mt-8 pt-8 text-center text-xs">
+                <p>&copy; 2025 NUTC Web Programming Portfolio. Designed with <i class="fa-solid fa-heart text-red-500"></i> & Tailwind CSS.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>

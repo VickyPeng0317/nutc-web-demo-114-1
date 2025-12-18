@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>皮卡丘電力氣象站 ⚡</title>
+    <!-- 引入適合遊戲風格的字體 -->
+    <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Zen+Maru+Gothic:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- 皮卡丘主題配色變數 --- */
+        :root {
+            --pika-yellow: #FFCB05;  /* 皮卡丘黃 */
+            --pika-red: #FF3434;     /* 臉頰紅 */
+            --pika-black: #212121;   /* 黑色 */
+            --pika-brown: #8D572A;   /* 條紋褐 */
+            --bg-color: #FFF9D9;     /* 淺黃背景 */
+            --card-white: #FFFFFF;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Zen Maru Gothic', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--pika-black);
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            /* 背景加入閃電裝飾 */
+            background-image: 
+                radial-gradient(var(--pika-yellow) 15%, transparent 16%),
+                repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,203,5,0.1) 10px, rgba(255,203,5,0.1) 20px);
+            background-size: 30px 30px, 100% 100%;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 30px;
+            padding: 25px;
+            box-shadow: 0 10px 0px var(--pika-brown); /* 遊戲風格厚陰影 */
+            border: 4px solid var(--pika-black);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* 裝飾用的精靈球 CSS 繪圖 */
+        .pokeball-bg {
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: linear-gradient(to bottom, var(--pika-red) 50%, white 50%);
+            border: 4px solid var(--pika-black);
+            opacity: 0.2;
+            transform: rotate(-25deg);
+            z-index: 0;
+        }
+        .pokeball-bg::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            background: white;
+            border: 4px solid var(--pika-black);
+            border-radius: 50%;
+        }
+
+        /* --- 標題區 --- */
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            font-family: 'DotGothic16', sans-serif; /* 像素字體 */
+            font-size: 2.2rem;
+            color: var(--pika-black);
+            text-shadow: 3px 3px 0px var(--pika-yellow);
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .location-tag {
+            display: inline-block;
+            background: var(--pika-red);
+            color: white;
+            padding: 5px 20px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            box-shadow: 3px 3px 0 rgba(0,0,0,0.2);
+            border: 2px solid var(--pika-black);
+        }
+
+        /* --- 載入動畫 --- */
+        #loading {
+            text-align: center;
+            font-size: 1.2rem;
+            padding: 40px;
+            color: var(--pika-brown);
+            font-weight: bold;
+        }
+
+        /* --- 主要天氣卡片 (Current) --- */
+        .main-card {
+            background: var(--pika-yellow);
+            color: var(--pika-black);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            position: relative;
+            box-shadow: 6px 6px 0px var(--pika-black);
+            border: 3px solid var(--pika-black);
+            transition: transform 0.2s;
+            z-index: 1;
+        }
+
+        .main-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 8px 8px 0px var(--pika-black);
+        }
+
+        /* 皮卡丘耳朵裝飾 (SVG) */
+        .pika-ears {
+            position: absolute;
+            top: -25px;
+            left: 20px;
+            width: 60px;
+            height: 40px;
+            z-index: -1;
+        }
+
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 3px dashed var(--pika-black);
+            padding-bottom: 10px;
+        }
+
+        .main-time-badge {
+            background: var(--pika-black);
+            color: var(--pika-yellow);
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-family: 'DotGothic16', sans-serif;
+            font-size: 1.1rem;
+        }
+
+        .main-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .main-temp {
+            font-size: 3.8rem;
+            font-weight: 700;
+            line-height: 1;
+            font-family: 'DotGothic16', sans-serif;
+            color: var(--pika-red);
+            text-shadow: 2px 2px 0px white;
+        }
+
+        .main-icon {
+            font-size: 6rem;
+            animation: bounce 2s infinite;
+            filter: drop-shadow(3px 3px 0px rgba(0,0,0,0.2));
+        }
+
+        .main-details {
+            margin-top: 15px;
+            background: rgba(255,255,255,0.8);
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            border: 2px solid var(--pika-black);
+            font-weight: bold;
+        }
+
+        /* --- 未來預報區 (Grid) --- */
+        .forecast-list {
+            display: flex;
+            gap: 15px;
+            z-index: 1;
+            position: relative;
+        }
+
+        .sub-card {
+            flex: 1;
+            background: var(--card-white);
+            border: 3px solid var(--pika-black);
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            color: var(--pika-black);
+            box-shadow: 4px 4px 0px var(--pika-brown);
+            transition: all 0.2s;
+        }
+
+        .sub-card:hover {
+            transform: translateY(-3px);
+            background: #ffffe0;
+        }
+
+        .sub-time {
+            font-weight: bold;
+            color: var(--pika-brown);
+            margin-bottom: 5px;
+            font-size: 1rem;
+            border-bottom: 2px solid var(--pika-yellow);
+            display: inline-block;
+        }
+
+        .sub-icon {
+            font-size: 3rem;
+            margin: 10px 0;
+            display: inline-block;
+        }
+
+        .sub-temp {
+            font-size: 1.4rem;
+            font-weight: bold;
+            font-family: 'DotGothic16', sans-serif;
+        }
+
+        .sub-rain {
+            font-size: 0.8rem;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        /* --- 閃電裝飾 SVG --- */
+        .thunder-bolt {
+            position: absolute;
+            width: 30px;
+            height: 50px;
+            fill: var(--pika-yellow);
+            stroke: var(--pika-black);
+            stroke-width: 2;
+            animation: flash 1s infinite alternate;
+        }
+
+        /* --- 動畫 --- */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes flash {
+            0% { opacity: 0.6; transform: scale(1); }
+            100% { opacity: 1; transform: scale(1.2); }
+        }
+
+        /* --- RWD --- */
+        @media (max-width: 480px) {
+            .forecast-list {
+                flex-direction: column;
+            }
+            .main-icon {
+                font-size: 4.5rem;
+            }
+            .main-temp {
+                font-size: 3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- 裝飾用背景精靈球 -->
+        <div class="pokeball-bg"></div>
+        <!-- 裝飾用閃電 -->
+        <svg class="thunder-bolt" style="top: 20px; left: 10px; transform: rotate(-20deg);" viewBox="0 0 24 24">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+        </svg>
+        <svg class="thunder-bolt" style="bottom: 20px; right: 10px; transform: rotate(20deg);" viewBox="0 0 24 24">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+        </svg>
+
+        <header>
+            <h1>
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="var(--pika-yellow)" stroke="var(--pika-black)" stroke-width="2">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                </svg>
+                皮卡丘電力氣象
+                <svg width="30" height="30" viewBox="0 0 24 24" fill="var(--pika-yellow)" stroke="var(--pika-black)" stroke-width="2">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                </svg>
+            </h1>
+            <div class="location-tag" id="city-name">真新鎮...</div>
+        </header>
+
+        <div id="loading">
+            ⚡ 正在與氣象衛星連線...<br>
+            <span style="font-size:0.8rem;">(皮卡皮卡...)</span>
+        </div>
+
+        <div id="weather-data" style="display: none;">
+            <!-- 當前主打區塊 -->
+            <div class="main-card" id="current-forecast">
+                <!-- 皮卡丘耳朵 SVG -->
+                <svg class="pika-ears" viewBox="0 0 100 60">
+                    <path d="M10 60 Q 5 10 30 5 L 40 25 Z" fill="#FFCB05" stroke="#212121" stroke-width="3"/>
+                    <path d="M10 60 Q 5 10 30 5 L 35 15 Z" fill="#212121"/> <!-- 耳尖黑 -->
+                </svg>
+                <!-- JS 填入 -->
+            </div>
+
+            <!-- 未來預報列表 -->
+            <div class="forecast-list" id="future-forecasts">
+                <!-- JS 填入 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://nutc-web-vic-peng.zeabur.app/api/weather/kaohsiung';
+
+        // 寶可夢風格的時段描述轉換
+        function getPokeTime(startTimeStr) {
+            const date = new Date(startTimeStr);
+            const hour = date.getHours();
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const dateStr = `${month}/${day}`;
+
+            let desc = "";
+            if (hour >= 5 && hour < 11) desc = "晨間特訓 🥊";
+            else if (hour >= 11 && hour < 14) desc = "補充電力 🔋";
+            else if (hour >= 14 && hour < 18) desc = "尋找樹果 🍎";
+            else if (hour >= 18 && hour < 23) desc = "探險時光 🎒";
+            else desc = "存檔睡覺 💾";
+
+            return { date: dateStr, desc: desc };
+        }
+
+        // 取得天氣 Emoji (加大版)
+        function getWeatherEmoji(weatherText) {
+            if (weatherText.includes('晴')) return '☀️';
+            if (weatherText.includes('雷')) return '⚡';
+            if (weatherText.includes('雨')) return '🌧️';
+            if (weatherText.includes('雲') || weatherText.includes('陰')) return '☁️';
+            return '🌤️';
+        }
+
+        // 取得舒適度描述 (變更為寶可夢用語)
+        function getComfortDesc(comfort, temp) {
+            const t = parseInt(temp);
+            if (t > 30) return "效果絕佳 (熱)";
+            if (t < 15) return "被冰凍了 (冷)";
+            return "狀態良好";
+        }
+
+        async function initWeather() {
+            const loadingEl = document.getElementById('loading');
+            const contentEl = document.getElementById('weather-data');
+            const cityEl = document.getElementById('city-name');
+            const mainCardEl = document.getElementById('current-forecast');
+            const futureListEl = document.getElementById('future-forecasts');
+
+            try {
+                const res = await fetch(API_URL);
+                const json = await res.json();
+
+                if (!json.success) throw new Error("API 失效");
+
+                const data = json.data;
+                cityEl.textContent = `📍 ${data.city} 道館`;
+
+                const forecasts = data.forecasts;
+
+                // 1. 渲染主要卡片
+                const current = forecasts[0];
+                const timeInfo = getPokeTime(current.startTime);
+                
+                mainCardEl.innerHTML = `
+                    <div class="main-header">
+                        <span class="main-time-badge">${timeInfo.date} ${timeInfo.desc}</span>
+                        <span style="font-weight:bold;">${current.weather}</span>
+                    </div>
+                    <div class="main-content">
+                        <div>
+                            <div class="main-temp">${current.minTemp.replace('C','')}~${current.maxTemp}</div>
+                            <div class="main-details">
+                                💧 降雨機率：${current.rain}<br>
+                                ❤️ ${getComfortDesc(current.comfort, current.maxTemp)}
+                            </div>
+                        </div>
+                        <div class="main-icon">${getWeatherEmoji(current.weather)}</div>
+                    </div>
+                `;
+
+                // 2. 渲染下方未來區塊
+                futureListEl.innerHTML = '';
+                for(let i=1; i<3; i++) {
+                    if(forecasts[i]) {
+                        const item = forecasts[i];
+                        const subTimeInfo = getPokeTime(item.startTime);
+                        
+                        const subDiv = document.createElement('div');
+                        subDiv.className = 'sub-card';
+                        subDiv.innerHTML = `
+                            <div class="sub-time">${subTimeInfo.desc}</div>
+                            <div class="sub-icon">${getWeatherEmoji(item.weather)}</div>
+                            <div class="sub-temp">${item.minTemp}~${item.maxTemp}</div>
+                            <div class="sub-rain">☔ ${item.rain}</div>
+                        `;
+                        futureListEl.appendChild(subDiv);
+                    }
+                }
+
+                loadingEl.style.display = 'none';
+                contentEl.style.display = 'block';
+
+            } catch (err) {
+                console.error(err);
+                loadingEl.innerHTML = `😵 訊號中斷...<br><button onclick="location.reload()" style="margin-top:10px;">重新連線</button>`;
+            }
+        }
+
+        initWeather();
+    </script>
+</body>
+</html>
