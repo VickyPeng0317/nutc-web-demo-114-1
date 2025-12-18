@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>班級分析儀表板</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&family=Press+Start+2P&family=Righteous&family=Zen+Maru+Gothic:wght@700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* 全域設定 */
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* 區塊 1: 普普風 (Pop Art) - Section A */
+        .theme-pop {
+            background-color: #fff1f2;
+            background-image: radial-gradient(#fb7185 2px, transparent 2px);
+            background-size: 30px 30px;
+        }
+        .font-pop {
+            font-family: 'Zen Maru Gothic', sans-serif;
+        }
+
+        /* 區塊 2: 深夜模式 (Night/Neon) - Section B */
+        .theme-night {
+            background: linear-gradient(to bottom, #0f172a, #1e1b4b);
+            color: #e2e8f0;
+        }
+        .neon-text {
+            text-shadow: 0 0 10px #818cf8, 0 0 20px #818cf8;
+        }
+        .energy-bar-bg {
+            background: #1e293b;
+            box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.6);
+        }
+        .energy-bar-fill {
+            background: linear-gradient(90deg, #ef4444 0%, #eab308 50%, #22d3ee 100%);
+            box-shadow: 0 0 10px rgba(34, 211, 238, 0.5);
+            transition: width 1.5s ease-in-out;
+        }
+
+        /* 區塊 3: 像素電玩風 (RPG/8-bit) - Section C */
+        .theme-game {
+            background-color: #fcd34d;
+            border-top: 8px solid #000;
+            border-bottom: 8px solid #000;
+        }
+        .font-pixel {
+            font-family: 'Press Start 2P', cursive;
+        }
+        .pixel-box {
+            box-shadow: 8px 8px 0px 0px #000000;
+            border: 4px solid #000;
+        }
+        .pixel-btn {
+            background-color: #fff;
+            border: 4px solid #000;
+            box-shadow: 4px 4px 0px 0px #000000;
+            transition: all 0.1s;
+        }
+        .pixel-btn:active {
+            transform: translate(4px, 4px);
+            box-shadow: 0px 0px 0px 0px #000000;
+        }
+
+        /* 區塊 4: 蒸汽波 (Vaporwave) - Section D */
+        .theme-vapor {
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+        .font-vapor {
+            font-family: 'Righteous', cursive;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 導航/標題 -->
+    <header class="bg-black text-white py-4 md:py-6 text-center sticky top-0 z-50 shadow-lg border-b-4 border-yellow-400">
+        <h1 class="text-2xl md:text-3xl font-black tracking-widest uppercase flex items-center justify-center gap-3">
+            <i data-lucide="clipboard-list" class="text-yellow-400"></i>
+            <span>表單結果分析儀</span>
+            <i data-lucide="bar-chart-2" class="text-yellow-400"></i>
+        </h1>
+        <p class="text-gray-400 text-xs mt-1 font-mono">DATA VISUALIZATION // FORM RESPONSE</p>
+    </header>
+
+    <!-- 區塊 1: 日常人格分佈 (Radar Chart) - Section A -->
+    <section class="min-h-screen theme-pop flex flex-col items-center justify-center p-6 relative">
+        <div class="absolute top-10 right-10 transform rotate-12 bg-yellow-300 px-6 py-3 border-4 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hidden lg:block z-10">
+            <span class="font-bold text-xl font-pop">Section A</span>
+        </div>
+
+        <div class="max-w-5xl w-full bg-white rounded-[2.5rem] p-8 md:p-12 shadow-2xl border-[6px] border-pink-400 relative overflow-hidden">
+            <!-- 背景裝飾圓點 -->
+            <div class="absolute -top-10 -left-10 w-40 h-40 bg-pink-200 rounded-full opacity-50"></div>
+            <div class="absolute -bottom-10 -right-10 w-60 h-60 bg-blue-200 rounded-full opacity-50"></div>
+
+            <div class="text-center mb-10 relative z-10">
+                <span class="inline-block bg-pink-100 text-pink-600 px-4 py-1 rounded-full text-sm font-bold mb-2">日常人格分佈</span>
+                <h2 class="text-3xl md:text-5xl font-black text-gray-800 font-pop">你像哪種生物？</h2>
+                <div class="mt-4 inline-block bg-black text-white px-6 py-2 rounded-lg transform -rotate-2 font-bold text-lg shadow-lg">
+                    截止日風格：<span class="text-yellow-300">前一天衝刺派</span> 🔥
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center relative z-10">
+                <div class="relative h-[350px] w-full bg-white/50 rounded-3xl p-4">
+                    <canvas id="creatureChart"></canvas>
+                </div>
+                <div class="space-y-6 font-pop">
+                    <div class="bg-white p-6 rounded-2xl border-2 border-gray-100 shadow-lg hover:shadow-xl transition-shadow">
+                        <h3 class="font-bold text-xl text-pink-500 mb-4 flex items-center gap-2">
+                            <i data-lucide="user-check"></i>
+                            人格生物屬性
+                        </h3>
+                        <ul class="space-y-3">
+                            <li class="flex items-center justify-between text-gray-600 border-b border-gray-100 pb-2">
+                                <span>🦉 貓頭鷹</span>
+                                <span class="font-bold text-gray-800">越晚越清醒</span>
+                            </li>
+                            <li class="flex items-center justify-between text-gray-600 border-b border-gray-100 pb-2">
+                                <span>🦥 樹懶</span>
+                                <span class="font-bold text-gray-800">慢慢來比較快</span>
+                            </li>
+                            <li class="flex items-center justify-between text-gray-600 border-b border-gray-100 pb-2">
+                                <span>🐹 倉鼠</span>
+                                <span class="font-bold text-gray-800">忙到原地轉圈</span>
+                            </li>
+                            <li class="flex items-center justify-between text-gray-600 border-b border-gray-100 pb-2">
+                                <span>🐬 海豚</span>
+                                <span class="font-bold text-gray-800">睡很少也能撐</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 區塊 2: 睡眠與精神狀態 (Mixed Chart) - Section B -->
+    <section class="min-h-screen theme-night flex flex-col items-center justify-center p-6 border-t border-indigo-900">
+        <div class="max-w-6xl w-full">
+            <div class="flex flex-col md:flex-row justify-between items-end mb-8 border-b border-indigo-800 pb-6">
+                <div>
+                    <span class="text-indigo-400 font-mono text-sm tracking-wider">SECTION B // STATUS_MONITOR</span>
+                    <h2 class="text-3xl md:text-5xl font-bold text-white neon-text mt-2">睡眠與精神狀態</h2>
+                </div>
+                <div class="text-right mt-4 md:mt-0">
+                    <div class="text-4xl font-mono font-bold text-indigo-300">01:30 <span class="text-sm">AM</span></div>
+                    <div class="text-indigo-400 text-sm">平均入睡時間</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- 左側：儀表板數據 -->
+                <div class="lg:col-span-1 space-y-6">
+                    <!-- 能量條 -->
+                    <div class="bg-gray-900/60 p-6 rounded-xl border border-indigo-500/30">
+                        <div class="flex justify-between text-white mb-2 font-mono">
+                            <span>ENERGY_LEVEL</span>
+                            <span class="text-yellow-400">35%</span>
+                        </div>
+                        <div class="w-full h-4 energy-bar-bg rounded-full overflow-hidden">
+                            <div class="h-full energy-bar-fill" style="width: 35%"></div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 text-right">狀態: 快關機 (0-100)</p>
+                    </div>
+
+                    <!-- 清醒程度 -->
+                    <div class="bg-gray-900/60 p-6 rounded-xl border border-indigo-500/30">
+                        <h3 class="text-indigo-300 font-bold mb-4 flex items-center gap-2">
+                            <i data-lucide="sun"></i> 早晨第一堂課
+                        </h3>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-400 text-xs">靈魂不在 (1)</span>
+                            <div class="flex gap-1">
+                                <div class="w-3 h-8 bg-indigo-500 shadow-[0_0_8px_indigo]"></div>
+                                <div class="w-3 h-8 bg-indigo-500 shadow-[0_0_8px_indigo]"></div>
+                                <div class="w-3 h-8 bg-gray-700"></div>
+                                <div class="w-3 h-8 bg-gray-700"></div>
+                                <div class="w-3 h-8 bg-gray-700"></div>
+                            </div>
+                            <span class="text-gray-400 text-xs">超清醒 (5)</span>
+                        </div>
+                        <div class="text-center mt-3 text-white font-bold text-xl">Level 2</div>
+                    </div>
+                </div>
+
+                <!-- 右側：主圖表 -->
+                <div class="lg:col-span-2 bg-gray-900/80 p-6 rounded-xl border border-indigo-500/30 shadow-[0_0_30px_rgba(99,102,241,0.1)]">
+                    <h3 class="text-white font-bold mb-4 flex items-center gap-2">
+                        <i data-lucide="moon"></i> 睡眠時數追蹤 (近兩週)
+                    </h3>
+                    <div class="relative h-[300px] w-full">
+                        <canvas id="sleepChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 區塊 3: 續命與飲食習慣 (Horizontal Bar) - Section C -->
+    <section class="min-h-screen theme-game flex flex-col items-center justify-center p-4 md:p-8 bg-cover bg-center" style="background-image: url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'0 0 2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23fbbf24\' fill-opacity=\'0.4\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E');">
+        
+        <div class="max-w-4xl w-full bg-white pixel-box p-6 md:p-8 relative">
+            <div class="absolute -top-5 left-4 bg-red-500 text-white font-pixel text-xs px-3 py-1 border-2 border-black">
+                SECTION C
+            </div>
+
+            <div class="text-center mb-8 border-b-4 border-gray-200 pb-4">
+                <h2 class="text-2xl md:text-3xl font-black text-gray-800 font-pixel leading-relaxed">
+                    ITEM SHOP: <span class="text-green-600">SURVIVAL</span>
+                </h2>
+                <p class="font-bold text-gray-500 mt-2 font-mono">你最常靠什麼續命？</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- 飲料統計數據 -->
+                <div class="col-span-1 space-y-4">
+                    <div class="bg-orange-100 p-4 border-4 border-orange-300">
+                        <h4 class="font-bold text-orange-800 text-sm mb-1">🥤 手搖/含糖飲料</h4>
+                        <div class="text-4xl font-black text-orange-600 font-pixel">5 <span class="text-sm text-gray-500">杯/週</span></div>
+                    </div>
+                    <div class="bg-amber-100 p-4 border-4 border-amber-800">
+                        <h4 class="font-bold text-amber-900 text-sm mb-1">☕ 咖啡/能量飲</h4>
+                        <div class="text-4xl font-black text-amber-800 font-pixel">12 <span class="text-sm text-gray-500">杯/週</span></div>
+                    </div>
+                    <div class="bg-gray-100 p-4 border-4 border-gray-400">
+                        <h4 class="font-bold text-gray-700 text-sm mb-1">🥡 外食次數</h4>
+                        <div class="text-4xl font-black text-gray-800 font-pixel">14 <span class="text-sm text-gray-500">次/週</span></div>
+                    </div>
+                </div>
+
+                <!-- 續命圖表 -->
+                <div class="col-span-1 md:col-span-2">
+                    <div class="relative h-[300px] w-full">
+                        <canvas id="survivalChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 bg-black text-white p-4 font-mono text-sm">
+                <span class="text-green-400">> SYSTEM:</span> 玩家選擇了「朋友的鼓勵」作為續命道具，但效果似乎不如「咖啡」顯著...
+            </div>
+        </div>
+    </section>
+
+    <!-- 區塊 4: 時間都去哪了 (Doughnut) - Section D -->
+    <section class="min-h-screen theme-vapor flex flex-col items-center justify-center p-6 text-slate-800">
+        <div class="max-w-6xl w-full">
+            <div class="text-center mb-10">
+                <h2 class="text-5xl md:text-7xl font-vapor text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-blue-500 drop-shadow-sm mb-2">
+                    TIME IS GONE
+                </h2>
+                <p class="text-purple-600 font-bold tracking-widest bg-white/50 inline-block px-4 py-1 rounded-full backdrop-blur-sm">
+                    SECTION D: 一天時間分配估算
+                </p>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-8 items-center justify-center">
+                
+                <!-- 甜甜圈圖 -->
+                <div class="glass-card p-8 rounded-full shadow-2xl relative w-[320px] h-[320px] md:w-[450px] md:h-[450px] flex-shrink-0">
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                        <div class="text-center">
+                            <span class="block text-4xl font-bold text-purple-900 font-vapor">24H</span>
+                            <span class="text-xs text-purple-700">DAILY CYCLE</span>
+                        </div>
+                    </div>
+                    <div class="w-full h-full relative z-10">
+                        <canvas id="timeChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- 列表 -->
+                <div class="glass-card p-8 rounded-2xl shadow-xl max-w-sm w-full">
+                    <h3 class="text-xl font-bold mb-6 text-purple-900 border-b border-purple-200 pb-2">詳細時數分配</h3>
+                    <ul class="space-y-4">
+                        <li class="flex items-center justify-between group">
+                            <div class="flex items-center gap-3">
+                                <span class="w-3 h-3 rounded-full bg-purple-400 group-hover:animate-pulse"></span>
+                                <span class="text-gray-700 font-medium">上課＋讀書</span>
+                            </div>
+                            <span class="font-bold text-purple-600 bg-purple-100 px-2 py-1 rounded">6 H</span>
+                        </li>
+                        <li class="flex items-center justify-between group">
+                            <div class="flex items-center gap-3">
+                                <span class="w-3 h-3 rounded-full bg-blue-400 group-hover:animate-pulse"></span>
+                                <span class="text-gray-700 font-medium">打工/社團</span>
+                            </div>
+                            <span class="font-bold text-blue-600 bg-blue-100 px-2 py-1 rounded">3 H</span>
+                        </li>
+                        <li class="flex items-center justify-between group">
+                            <div class="flex items-center gap-3">
+                                <span class="w-3 h-3 rounded-full bg-pink-400 group-hover:animate-pulse"></span>
+                                <span class="text-gray-700 font-medium">追劇/遊戲/社群</span>
+                            </div>
+                            <span class="font-bold text-pink-600 bg-pink-100 px-2 py-1 rounded">8 H</span>
+                        </li>
+                        <li class="flex items-center justify-between group">
+                            <div class="flex items-center gap-3">
+                                <span class="w-3 h-3 rounded-full bg-indigo-300 group-hover:animate-pulse"></span>
+                                <span class="text-gray-700 font-medium">睡覺</span>
+                            </div>
+                            <span class="font-bold text-indigo-600 bg-indigo-100 px-2 py-1 rounded">7 H</span>
+                        </li>
+                    </ul>
+                    <p class="mt-6 text-xs text-gray-500 italic text-center">
+                        * 注意：數據顯示「娛樂」時間似乎大於「讀書」時間...
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <footer class="bg-black text-white py-10 text-center font-mono text-xs border-t-4 border-gray-800">
+        <p class="mb-2">© 2025 人生儀表板生成器</p>
+        <p class="text-gray-500">本結果僅供娛樂，如有雷同，那很正常。</p>
+    </footer>
+
+    <!-- Chart.js 邏輯 -->
+    <script>
+        // 初始化 Lucide Icons
+        lucide.createIcons();
+
+        // 共用字型設定
+        Chart.defaults.font.family = "'Noto Sans TC', sans-serif";
+
+        // --------------------------------------------------
+        // Chart 1: Section A - 日常人格分佈 (Radar)
+        // --------------------------------------------------
+        const ctxCreature = document.getElementById('creatureChart').getContext('2d');
+        new Chart(ctxCreature, {
+            type: 'radar',
+            data: {
+                // 對應表單選項：貓頭鷹、早起鳥、樹懶、倉鼠、海豚
+                labels: ['貓頭鷹', '早起鳥', '樹懶', '倉鼠', '海豚'],
+                datasets: [{
+                    label: '人格相似度',
+                    data: [90, 20, 75, 40, 60], // 模擬數據：這人很像貓頭鷹和樹懶
+                    backgroundColor: 'rgba(236, 72, 153, 0.2)',
+                    borderColor: 'rgba(236, 72, 153, 1)',
+                    pointBackgroundColor: 'rgba(236, 72, 153, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(236, 72, 153, 1)',
+                    borderWidth: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: { color: '#e5e7eb' },
+                        grid: { color: '#e5e7eb', circular: true },
+                        pointLabels: {
+                            font: { size: 14, weight: 'bold', family: "'Zen Maru Gothic', sans-serif" },
+                            color: '#1f2937' // Gray-800
+                        },
+                        ticks: { display: false, max: 100 }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+
+        // --------------------------------------------------
+        // Chart 2: Section B - 睡眠時數 (Bar + Line Target)
+        // --------------------------------------------------
+        const ctxSleep = document.getElementById('sleepChart').getContext('2d');
+        new Chart(ctxSleep, {
+            type: 'bar',
+            data: {
+                // 模擬兩週日期
+                labels: ['D1', 'D2', 'D3', 'D4', 'D5', 'D6', 'D7', 'D8', 'D9', 'D10', 'D11', 'D12', 'D13', 'D14'],
+                datasets: [
+                    {
+                        label: '每日睡眠時數',
+                        data: [6, 5.5, 7, 6.5, 4, 8, 9, 6.5, 6, 5, 5.5, 7, 8, 6.5], // 平均約 6.5
+                        backgroundColor: '#6366f1', // Indigo-500
+                        borderRadius: 4,
+                        order: 2
+                    },
+                    {
+                        type: 'line',
+                        label: '理想目標 (8H)',
+                        data: Array(14).fill(8),
+                        borderColor: '#22d3ee', // Cyan-400
+                        borderWidth: 2,
+                        borderDash: [5, 5],
+                        pointRadius: 0,
+                        order: 1,
+                        tension: 0
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: 'index', intersect: false },
+                plugins: {
+                    legend: { labels: { color: '#94a3b8' } },
+                    tooltip: {
+                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        titleColor: '#fff',
+                        bodyColor: '#cbd5e1'
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: '#334155', display: false },
+                        ticks: { color: '#94a3b8' }
+                    },
+                    y: {
+                        grid: { color: '#334155' },
+                        ticks: { color: '#cbd5e1' },
+                        title: { display: true, text: '小時', color: '#6366f1' },
+                        min: 0,
+                        max: 12
+                    }
+                }
+            }
+        });
+
+        // --------------------------------------------------
+        // Chart 3: Section C - 續命與飲食 (Horizontal Bar)
+        // --------------------------------------------------
+        const ctxSurvival = document.getElementById('survivalChart').getContext('2d');
+        new Chart(ctxSurvival, {
+            type: 'bar',
+            indexAxis: 'y',
+            data: {
+                // 對應表單選項
+                labels: ['咖啡', '手搖飲', '甜食', '宵夜', '水', '意志力', '朋友鼓勵'],
+                datasets: [{
+                    label: '續命依賴度 (%)',
+                    data: [90, 85, 60, 45, 20, 10, 30], // 模擬數據
+                    backgroundColor: [
+                        '#78350f', // 咖啡 (深棕)
+                        '#d97706', // 手搖 (橘)
+                        '#ec4899', // 甜食 (粉)
+                        '#eab308', // 宵夜 (黃)
+                        '#3b82f6', // 水 (藍)
+                        '#ef4444', // 意志力 (紅)
+                        '#8b5cf6'  // 朋友 (紫)
+                    ],
+                    borderWidth: 3,
+                    borderColor: '#000',
+                    barThickness: 20
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { display: true, color: '#e5e7eb' },
+                        ticks: { font: { family: "'Press Start 2P', cursive" }, color: '#000' }
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { 
+                            font: { family: "'Noto Sans TC', sans-serif", weight: 'bold', size: 13 }, 
+                            color: '#000' 
+                        }
+                    }
+                }
+            }
+        });
+
+        // --------------------------------------------------
+        // Chart 4: Section D - 時間分配 (Doughnut)
+        // --------------------------------------------------
+        const ctxTime = document.getElementById('timeChart').getContext('2d');
+        new Chart(ctxTime, {
+            type: 'doughnut',
+            data: {
+                // 對應表單四個區塊
+                labels: ['上課＋讀書', '打工/社團', '追劇/遊戲/社群', '睡覺'],
+                datasets: [{
+                    data: [6, 3, 8, 7], // 模擬輸入：6, 3, 8, 7
+                    backgroundColor: [
+                        '#c084fc', // 紫 (讀書)
+                        '#60a5fa', // 藍 (打工)
+                        '#f472b6', // 粉 (娛樂)
+                        '#a5b4fc'  // 淡紫 (睡覺)
+                    ],
+                    borderColor: '#fff',
+                    borderWidth: 2,
+                    hoverOffset: 15
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: { display: false }, // 隱藏預設圖例，使用自定義 HTML 列表
+                    tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        titleColor: '#6b21a8',
+                        bodyColor: '#4c1d95',
+                        bodyFont: { size: 14, weight: 'bold' },
+                        borderColor: '#e9d5ff',
+                        borderWidth: 1,
+                        padding: 12,
+                        callbacks: {
+                            label: function(context) {
+                                return ` ${context.label}: ${context.raw} 小時`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
