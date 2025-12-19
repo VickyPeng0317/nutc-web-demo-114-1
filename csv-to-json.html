@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV 解析視覺化實驗室</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            overflow: hidden; /* Prevent scrolling on body */
+        }
+        code, pre, .font-mono {
+            font-family: 'Roboto Mono', monospace;
+        }
+        /* Custom scrollbar for code block */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563; 
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        // --- Icons (Inline SVGs to avoid dependencies) ---
+        const RotateCcw = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12"/><path d="M3 3v9h9"/></svg>
+        );
+        const ChevronRight = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>
+        );
+        const ChevronLeft = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6"/></svg>
+        );
+        const CodeIcon = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        );
+        const Database = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s 9-1.34 9-3V5"/></svg>
+        );
+
+        // --- 1. Constants & Data ---
+
+        const RAW_CSV = `時間戳記,姓名,學號,Email,年級,飲食習慣,備註
+2025/12/18 11:16,Vic,1710932013,cxz...97@gmail,大一,葷食,hi
+2025/12/18 12:19,vic,10430004,xxxxx,大四,不吃牛,
+2025/12/18 12:24,test,test,test,大四,不吃牛,`;
+
+        const CODE_SNIPPET = `function csvToJson(csvText) {
+  // 1. 用換行符號切分出每一行
+  const lines = csvText.split("\\n");
+
+  // 2. 取出第一行當作「標題」(Headers)
+  const headers = lines[0].split(",");
+
+  const result = [];
+
+  // 3. 從第二行開始巡覽資料
+  for (let i = 1; i < lines.length; i++) {
+    // 處理防呆：跳過空行
+    if (!lines[i]) continue;
+
+    const currentLine = lines[i].split(",");
+    const obj = {};
+
+    // 4. 把每個欄位塞進物件裡
+    for (let j = 0; j < headers.length; j++) {
+       // headers[j] 是欄位名稱
+       // currentLine[j] 是內容
+       obj[headers[j].trim()] = currentLine[j].trim();
+    }
+    result.push(obj);
+  }
+  return result; // 回傳整理好的物件陣列
+}`;
+
+        const STEPS = [
+          {
+            id: 0,
+            title: "初始狀態",
+            desc: "這是我們從檔案或 API 讀取到的原始 CSV 字串內容。",
+            highlight: [],
+            animationType: "raw"
+          },
+          {
+            id: 1,
+            title: "切分行 (Split Lines)",
+            desc: "使用 split('\\n') 將整塊文字依照換行符號切成陣列。",
+            highlight: [2, 3],
+            animationType: "split_lines"
+          },
+          {
+            id: 2,
+            title: "提取標題 (Parse Headers)",
+            desc: "取出陣列的第一筆資料 (lines[0])，並用逗號切分，這些將成為 JSON 物件的 Key。",
+            highlight: [5, 6],
+            animationType: "parse_headers"
+          },
+          {
+            id: 3,
+            title: "準備容器與迴圈",
+            desc: "建立 result 空陣列，並準備從 index = 1 (第二行) 開始處理資料。",
+            highlight: [8, 11],
+            animationType: "init_loop"
+          },
+          {
+            id: 4,
+            title: "處理第一筆資料：切分",
+            desc: "讀取 lines[1]，使用 split(',') 切分出該行的所有欄位值。",
+            highlight: [15],
+            animationType: "process_row_1_split"
+          },
+          {
+            id: 5,
+            title: "處理第一筆資料：映射 (Mapping)",
+            desc: "將 Headers 與當前行的欄位值一一對應。在記憶體中建立 { Key: Value } 的物件結構。",
+            highlight: [18, 19, 20, 21, 22],
+            animationType: "process_row_1_map"
+          },
+          {
+            id: 6,
+            title: "存入結果",
+            desc: "將組合好的物件 (Object) 放入 result 陣列中。",
+            highlight: [24],
+            animationType: "process_row_1_push"
+          },
+          {
+            id: 7,
+            title: "處理下一筆資料",
+            desc: "迴圈繼續執行，處理 lines[2]...",
+            highlight: [11, 15],
+            animationType: "process_row_2_split"
+          },
+          {
+            id: 8,
+            title: "完成轉換",
+            desc: "所有資料處理完畢，回傳最終的 JSON 物件陣列。",
+            highlight: [26],
+            animationType: "finish"
+          }
+        ];
+
+        // --- 2. Helper Functions ---
+        const lerp = (start, end, t) => start * (1 - t) + end * t;
+        const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+        const easeInOutQuad = (t) => t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+
+        // --- 3. Main Component ---
+        function CSVVisualizer() {
+            const [currentStep, setCurrentStep] = useState(0);
+            const canvasRef = useRef(null);
+            const containerRef = useRef(null);
+            
+            // 動畫相關狀態
+            const requestRef = useRef();
+            const startTimeRef = useRef();
+            const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
+
+            // 預處理資料結構以便繪圖
+            const processedData = useMemo(() => {
+                const lines = RAW_CSV.split('\n');
+                const headers = lines[0].split(',');
+                const rows = lines.slice(1).map(line => line.split(','));
+                return { lines, headers, rows };
+            }, []);
+
+            // RWD Canvas Resize
+            useEffect(() => {
+                const handleResize = () => {
+                if (containerRef.current) {
+                    const { clientWidth, clientHeight } = containerRef.current;
+                    setCanvasSize({ width: clientWidth, height: clientHeight });
+                }
+                };
+                window.addEventListener('resize', handleResize);
+                handleResize(); // Initial resize
+                return () => window.removeEventListener('resize', handleResize);
+            }, []);
+
+            // --- Animation Engine ---
+            const animate = (time) => {
+                if (!startTimeRef.current) startTimeRef.current = time;
+                const progress = Math.min((time - startTimeRef.current) / 1000, 1); // 1秒動畫
+                const easedProgress = easeInOutQuad(progress);
+
+                renderCanvas(currentStep, easedProgress);
+
+                if (progress < 1) {
+                requestRef.current = requestAnimationFrame(animate);
+                }
+            };
+
+            useEffect(() => {
+                startTimeRef.current = null;
+                requestRef.current = requestAnimationFrame(animate);
+                return () => cancelAnimationFrame(requestRef.current);
+            }, [currentStep, canvasSize]);
+
+            // --- Rendering Logic ---
+            const renderCanvas = (stepIndex, t) => {
+                const canvas = canvasRef.current;
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const { width, height } = canvasSize;
+                const stepType = STEPS[stepIndex].animationType;
+
+                // Clear
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = '#111827'; // Darker background (Tailwind gray-900)
+                ctx.fillRect(0, 0, width, height);
+
+                // Config
+                const startX = 40;
+                const startY = 50;
+                const lineHeight = 35;
+                const boxGap = 10;
+                // Calculate fluid block width based on available space, keeping space for Result box
+                const resultBoxWidth = 300;
+                const workingAreaWidth = width - resultBoxWidth - 60; // 60 for margins
+                const blockWidth = Math.min((workingAreaWidth / 7) - boxGap, 120); 
+
+                // --- Helper: Draw JSON Object Text ---
+                const drawJSONObject = (x, y, dataObj, headers, alpha = 1, scale = 1) => {
+                    ctx.save();
+                    ctx.globalAlpha = alpha;
+                    ctx.translate(x, y);
+                    ctx.scale(scale, scale);
+                    
+                    ctx.font = 'bold 14px "Roboto Mono", monospace';
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'top';
+
+                    const lineHeight = 18;
+                    let currentY = 0;
+
+                    // Draw Opening Brace
+                    ctx.fillStyle = '#e5e7eb'; // gray-200
+                    ctx.fillText('{', 0, currentY);
+                    currentY += lineHeight;
+
+                    // Draw Key-Values
+                    headers.forEach((h, i) => {
+                        // Limit display to 4 fields to save vertical space
+                        if (i > 3) return; 
+                        
+                        const key = h.trim();
+                        const val = dataObj[i] ? dataObj[i].trim() : "";
+
+                        // Indent
+                        const indent = 15;
+                        
+                        // Key
+                        ctx.fillStyle = '#60a5fa'; // blue-400
+                        ctx.fillText(`"${key}"`, indent, currentY);
+                        const keyWidth = ctx.measureText(`"${key}"`).width;
+                        
+                        // Colon
+                        ctx.fillStyle = '#9ca3af'; // gray-400
+                        ctx.fillText(`: `, indent + keyWidth, currentY);
+                        const colonWidth = ctx.measureText(`: `).width;
+
+                        // Value
+                        ctx.fillStyle = '#a3e635'; // lime-400
+                        ctx.fillText(`"${val}"`, indent + keyWidth + colonWidth, currentY);
+                        
+                        // Comma (if not last displayed)
+                        if (i < Math.min(headers.length, 4) - 1) {
+                             const totalWidth = indent + keyWidth + colonWidth + ctx.measureText(`"${val}"`).width;
+                             ctx.fillStyle = '#e5e7eb';
+                             ctx.fillText(`,`, totalWidth, currentY);
+                        }
+                        
+                        currentY += lineHeight;
+                    });
+
+                    // Ellipsis if truncated
+                    if (headers.length > 4) {
+                        ctx.fillStyle = '#6b7280';
+                        ctx.fillText(`  ...`, 0, currentY);
+                        currentY += lineHeight;
+                    }
+
+                    // Draw Closing Brace
+                    ctx.fillStyle = '#e5e7eb';
+                    ctx.fillText('},', 0, currentY);
+                    
+                    ctx.restore();
+                    return currentY + lineHeight; // return height used
+                };
+
+                // --- Helper: Draw Block ---
+                const drawBlock = (text, x, y, w, h, color = '#3b82f6', alpha = 1, borderColor = null, fontSize = 12) => {
+                    ctx.globalAlpha = alpha;
+                    ctx.fillStyle = color;
+                    
+                    // Shadow
+                    ctx.shadowColor = 'rgba(0,0,0,0.3)';
+                    ctx.shadowBlur = 4;
+                    ctx.shadowOffsetY = 2;
+
+                    ctx.beginPath();
+                    if (ctx.roundRect) {
+                        ctx.roundRect(x, y, w, h, 6);
+                    } else {
+                        ctx.rect(x, y, w, h);
+                    }
+                    ctx.fill();
+                    
+                    ctx.shadowColor = 'transparent'; // Reset shadow
+
+                    if (borderColor) {
+                        ctx.strokeStyle = borderColor;
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+
+                    ctx.fillStyle = '#ffffff';
+                    ctx.font = `${fontSize}px "Noto Sans TC", sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    
+                    // Smart Truncation
+                    let displayText = text;
+                    const metrics = ctx.measureText(text);
+                    if (metrics.width > w - 10) {
+                        // approximate char width
+                        const avgCharWidth = metrics.width / text.length;
+                        const maxChars = Math.floor((w - 20) / avgCharWidth);
+                        displayText = text.substring(0, maxChars) + '..';
+                    }
+                    
+                    ctx.fillText(displayText, x + w / 2, y + h / 2);
+                    ctx.globalAlpha = 1;
+                };
+
+                // Helper: Draw Bracket/Container
+                const drawContainer = (x, y, w, h, label) => {
+                    ctx.strokeStyle = '#4b5563'; // gray-600
+                    ctx.lineWidth = 2;
+                    ctx.setLineDash([6, 6]);
+                    ctx.strokeRect(x, y, w, h);
+                    ctx.setLineDash([]);
+                    
+                    // Label background
+                    ctx.fillStyle = '#111827';
+                    const labelWidth = ctx.measureText(label).width + 10;
+                    ctx.fillRect(x + 10, y - 10, labelWidth, 20);
+
+                    ctx.fillStyle = '#9ca3af'; // gray-400
+                    ctx.font = 'bold 14px "Roboto Mono", monospace';
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(label, x + 15, y);
+                };
+
+                const { lines, headers, rows } = processedData;
+
+                // --- Scene Logic ---
+
+                // 1. Scene: Raw Text Block
+                if (stepType === 'raw') {
+                    ctx.fillStyle = '#1f2937'; // gray-800
+                    ctx.fillRect(startX, startY, workingAreaWidth, lines.length * lineHeight + 40);
+                    ctx.strokeStyle = '#374151';
+                    ctx.strokeRect(startX, startY, workingAreaWidth, lines.length * lineHeight + 40);
+
+                    ctx.fillStyle = '#e5e7eb';
+                    ctx.font = '14px "Roboto Mono", monospace';
+                    ctx.textAlign = 'left';
+                    lines.forEach((line, i) => {
+                        ctx.fillText(line, startX + 15, startY + 30 + (i * lineHeight));
+                    });
+                    
+                    ctx.fillStyle = '#fbbf24'; // amber-400
+                    ctx.font = 'bold 16px "Noto Sans TC", sans-serif';
+                    ctx.fillText("CSV 原始字串 (Raw String)", startX, startY - 15);
+                }
+
+                // 2. Scene: Process Rows & Headers
+                if (['split_lines', 'parse_headers', 'init_loop', 'process_row_1_split', 'process_row_1_map', 'process_row_1_push', 'process_row_2_split', 'finish'].includes(stepType)) {
+                    
+                    const isSplitAnim = stepType === 'split_lines';
+                    const gap = isSplitAnim ? lerp(0, 15, t) : 15;
+
+                    lines.forEach((line, i) => {
+                        // Base position
+                        let y = startY + i * (lineHeight + gap);
+                        let x = startX;
+                        let w = workingAreaWidth; // Use calculated fluid width
+                        let color = '#374151'; // Gray for unprocessed
+                        let alpha = 1;
+
+                        // Visual States based on steps
+                        if (i === 0) { // Header Row
+                            if (stepIndex >= 2) color = '#1e40af'; // Blue-800
+                        } else { // Data Rows
+                            if (stepIndex >= 4 && i === 1) color = '#065f46'; // Green-800
+                            if (stepIndex >= 7 && i === 2) color = '#065f46';
+                        }
+
+                        // Ghost out finished rows or irrelevant rows
+                        if (stepType === 'process_row_1_map' && i !== 1 && i !== 0) alpha = 0.1;
+                        if (stepType === 'process_row_1_push' && i !== 0) alpha = 0.1;
+
+                        // Draw the full line strip (if not yet split into tokens)
+                        const isHeaderSplit = stepIndex >= 2 && i === 0;
+                        const isRow1Split = stepIndex >= 4 && i === 1;
+                        const isRow2Split = stepIndex >= 7 && i === 2;
+
+                        if ((i === 0 && !isHeaderSplit) || (i === 1 && !isRow1Split) || (i === 2 && !isRow2Split) || i > 2) {
+                            if (alpha > 0.05) drawBlock(line, x, y, w, lineHeight, color, alpha, null, 14);
+                        } else {
+                            // Draw Split Tokens
+                            const tokens = line.split(',');
+                            tokens.forEach((token, j) => {
+                                // Calculate target split positions
+                                const targetX = startX + j * (blockWidth + boxGap);
+                                
+                                // Animation for splitting
+                                let curX = isSplitAnim ? targetX : targetX; 
+                                if ((stepType === 'parse_headers' && i === 0) || (stepType === 'process_row_1_split' && i === 1)) {
+                                    curX = lerp(startX, targetX, t);
+                                }
+
+                                // Token Colors
+                                let tokenColor = color;
+                                if (i === 0) tokenColor = `hsl(${210 + j * 10}, 60%, 35%)`; // Blues
+                                if (i > 0) tokenColor = `hsl(${150 + j * 10}, 50%, 25%)`; // Greens
+
+                                // Mapping Animation Logic (Step 5)
+                                let curY = y;
+                                let curAlpha = alpha;
+                                
+                                if (stepType === 'process_row_1_map' && (i === 0 || i === 1)) {
+                                    // Move to "Construction Zone"
+                                    const meetY = startY + 180;
+                                    // Header comes down
+                                    if (i === 0) {
+                                        curY = lerp(y, meetY, t);
+                                        // Slight horizontal shift to center align with value visually if needed
+                                    }
+                                    // Value comes up
+                                    if (i === 1) {
+                                        curY = lerp(y, meetY + 40, t);
+                                    }
+                                }
+
+                                // Push Animation Logic (Step 6)
+                                if (stepType === 'process_row_1_push' && i === 1) {
+                                    // Move towards result box and fade out (morph into JSON text)
+                                    const finalX = width - resultBoxWidth + 50;
+                                    const finalY = 150;
+                                    
+                                    curX = lerp(targetX, finalX, t);
+                                    curY = lerp(startY + 180 + 40, finalY, t); // Start from mapping pos
+                                    curAlpha = 1 - t; // Fade out as it moves
+                                }
+
+                                // Skip drawing row 1 tokens if they are pushed and faded out
+                                if (stepIndex > 6 && i === 1) return;
+
+                                drawBlock(token, curX, curY, blockWidth, lineHeight, tokenColor, curAlpha, null, 12);
+                                
+                                // Draw Mapping Connection Lines (Visual Glue)
+                                if (stepType === 'process_row_1_map' && i === 0) {
+                                    const headerBottom = curY + lineHeight;
+                                    const valueTop = lerp(startY + 1 * (lineHeight + gap), startY + 180 + 40, t);
+                                    
+                                    if (t > 0.5) {
+                                        ctx.globalAlpha = (t - 0.5) * 2;
+                                        ctx.beginPath();
+                                        ctx.moveTo(curX + blockWidth/2, headerBottom);
+                                        ctx.lineTo(curX + blockWidth/2, valueTop);
+                                        ctx.strokeStyle = '#fbbf24'; // Amber
+                                        ctx.lineWidth = 2;
+                                        ctx.setLineDash([2, 2]);
+                                        ctx.stroke();
+                                        ctx.setLineDash([]);
+                                        ctx.globalAlpha = 1;
+                                    }
+                                }
+                            });
+                        }
+                    });
+
+                    // Visualize "Object Construction" in Center (Step 5)
+                    if (stepType === 'process_row_1_map') {
+                         ctx.globalAlpha = t;
+                         ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+                         const zoneY = startY + 170;
+                         const zoneH = 100;
+                         ctx.roundRect(startX - 10, zoneY, workingAreaWidth + 20, zoneH, 10);
+                         ctx.fill();
+                         ctx.strokeStyle = '#6366f1'; // Indigo
+                         ctx.stroke();
+                         
+                         ctx.fillStyle = '#a5b4fc';
+                         ctx.font = '14px sans-serif';
+                         ctx.fillText("正在組合 Object (Mapping)", startX + workingAreaWidth/2, zoneY - 15);
+                         ctx.globalAlpha = 1;
+                    }
+                }
+
+                // 3. Scene: Result Array Container
+                if (stepIndex >= 3) {
+                    const resX = width - resultBoxWidth + 10;
+                    const resY = 80;
+                    const resW = resultBoxWidth - 20;
+                    const resH = height - 100;
+                    
+                    ctx.globalAlpha = stepIndex === 3 ? t : 1;
+                    drawContainer(resX, resY, resW, resH, "const result = [ ]");
+                    
+                    // Draw Array Start Bracket
+                    ctx.fillStyle = '#f3f4f6';
+                    ctx.font = 'bold 16px monospace';
+                    ctx.fillText("[", resX + 10, resY + 30);
+                    
+                    ctx.globalAlpha = 1;
+
+                    let currentY = resY + 50;
+
+                    // Draw items inside result
+                    if (stepIndex >= 6) {
+                        // If pushing, animate the appearance of the JSON Text
+                        let scale = 1;
+                        let alpha = 1;
+                        if (stepType === 'process_row_1_push') {
+                            scale = 0.8 + (0.2 * t); // slight zoom in
+                            alpha = t; // fade in
+                        }
+
+                        // Draw Object 1
+                        const row1Data = rows[0];
+                        const usedH = drawJSONObject(resX + 20, currentY, row1Data, headers, alpha, scale);
+                        currentY += usedH + 10;
+                    }
+                    
+                    // Future: Draw Object 2 placeholder if needed for step 7+
+                    // For now, only row 1 is fully animated.
+                    
+                    if (stepIndex >= 6) {
+                         ctx.fillStyle = '#f3f4f6';
+                         ctx.font = 'bold 16px monospace';
+                         ctx.fillText("]", resX + 10, currentY);
+                    }
+                }
+                
+                // Final Scene Overlay
+                if (stepType === 'finish') {
+                    // Darken background
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+                    ctx.fillRect(0, 0, width, height);
+                    
+                    const centerY = height / 2;
+                    
+                    ctx.fillStyle = '#4ade80'; // green-400
+                    ctx.font = 'bold 28px "Noto Sans TC", sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText("轉換完成！ (JSON Array)", width/2, centerY - 100);
+                    
+                    // Draw a big nice JSON representation of 2 rows
+                    const startJsonY = centerY - 50;
+                    const jsonX = width / 2 - 150;
+                    
+                    ctx.fillStyle = '#f3f4f6';
+                    ctx.font = '16px "Roboto Mono", monospace';
+                    ctx.textAlign = 'left';
+                    
+                    ctx.fillText("[", jsonX, startJsonY);
+                    
+                    // Row 1
+                    let h1 = drawJSONObject(jsonX + 20, startJsonY + 25, rows[0], headers);
+                    
+                    // Row 2
+                    let h2 = drawJSONObject(jsonX + 20, startJsonY + 25 + h1 + 5, rows[1], headers);
+
+                    ctx.fillStyle = '#f3f4f6';
+                    ctx.fillText("]", jsonX, startJsonY + 25 + h1 + 5 + h2 + 10);
+                }
+            };
+
+            // --- Handlers ---
+            const handleNext = () => {
+                if (currentStep < STEPS.length - 1) setCurrentStep(c => c + 1);
+            };
+
+            const handlePrev = () => {
+                if (currentStep > 0) setCurrentStep(c => c - 1);
+            };
+
+            const handleRestart = () => {
+                setCurrentStep(0);
+            };
+
+            return (
+                <div className="flex flex-col md:flex-row h-screen bg-gray-900 text-white overflow-hidden font-sans">
+                
+                {/* Left Panel: Visualization Canvas */}
+                <div className="flex-1 relative bg-gray-950 border-r border-gray-800 flex flex-col">
+                    <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 backdrop-blur">
+                    <h2 className="text-lg font-bold text-blue-400 flex items-center gap-2">
+                        <Database size={20} />
+                        視覺化畫布
+                    </h2>
+                    <div className="text-sm text-gray-400">
+                        Step: {currentStep + 1} / {STEPS.length}
+                    </div>
+                    </div>
+                    
+                    <div ref={containerRef} className="flex-1 w-full h-full relative overflow-hidden">
+                        <canvas 
+                            ref={canvasRef}
+                            width={canvasSize.width}
+                            height={canvasSize.height}
+                            className="block"
+                        />
+                        
+                        {/* Legend / Overlay */}
+                        <div className="absolute bottom-4 left-4 flex gap-4 text-xs bg-black/60 p-2 rounded backdrop-blur select-none z-10">
+                            <div className="flex items-center gap-1"><div className="w-3 h-3 bg-blue-700 rounded"></div> 標題 (Header)</div>
+                            <div className="flex items-center gap-1"><div className="w-3 h-3 bg-green-800 rounded"></div> 資料 (Data)</div>
+                            <div className="flex items-center gap-1"><div className="w-3 h-3 border border-gray-500 rounded flex justify-center items-center text-[8px] text-white font-mono">{"{ }"}</div> JSON 物件</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Right Panel: Code & Controls */}
+                <div className="w-full md:w-[450px] flex flex-col bg-gray-900 border-l border-gray-800">
+                    
+                    {/* Header */}
+                    <div className="p-4 border-b border-gray-800 bg-gray-900 z-10">
+                    <h1 className="text-xl font-bold mb-1 text-white">CSV to JSON 解析教學</h1>
+                    <p className="text-gray-400 text-sm">學習如何將逗號分隔字串轉換為物件陣列</p>
+                    </div>
+
+                    {/* Code View */}
+                    <div className="flex-1 overflow-auto p-4 bg-[#0d1117]">
+                    <div className="font-mono text-sm leading-6 relative">
+                        {/* Line Numbers */}
+                        <div className="absolute left-0 top-0 text-gray-600 select-none text-right pr-3 border-r border-gray-700 h-full w-8">
+                            {CODE_SNIPPET.split('\n').map((_, i) => (
+                                <div key={i} style={{height: '24px'}}>{i + 1}</div>
+                            ))}
+                        </div>
+                        
+                        {/* Code Lines */}
+                        <div className="pl-10">
+                            {CODE_SNIPPET.split('\n').map((line, i) => {
+                                const isHighlighted = STEPS[currentStep].highlight.includes(i + 1);
+                                return (
+                                    <div 
+                                        key={i} 
+                                        className={`whitespace-pre px-2 transition-colors duration-300 rounded-sm ${isHighlighted ? 'bg-blue-900/40 border-l-2 border-blue-400' : 'text-gray-400'}`}
+                                        style={{height: '24px'}}
+                                    >
+                                        <span className={isHighlighted ? 'text-blue-100 font-semibold' : ''}>{line}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                    </div>
+
+                    {/* Footer: Controls & Description */}
+                    <div className="border-t border-gray-800 bg-gray-900 p-4 shadow-lg z-10">
+                        {/* Step Description */}
+                        <div className="mb-4 min-h-[80px]">
+                            <h3 className="font-bold text-blue-400 mb-2 flex items-center gap-2">
+                                <CodeIcon size={16}/>
+                                Step {currentStep + 1}: {STEPS[currentStep].title}
+                            </h3>
+                            <p className="text-gray-300 text-sm leading-relaxed border-l-2 border-gray-600 pl-3">
+                                {STEPS[currentStep].desc}
+                            </p>
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="h-1 bg-gray-700 w-full mb-4 rounded overflow-hidden">
+                            <div 
+                                className="h-full bg-blue-500 transition-all duration-300 ease-out" 
+                                style={{width: `${((currentStep + 1) / STEPS.length) * 100}%`}}
+                            ></div>
+                        </div>
+
+                        {/* Buttons */}
+                        <div className="flex justify-between gap-2">
+                            <button 
+                                onClick={handleRestart}
+                                className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors"
+                                title="重新開始"
+                            >
+                                <RotateCcw size={20} />
+                            </button>
+                            
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={handlePrev}
+                                    disabled={currentStep === 0}
+                                    className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm font-medium"
+                                >
+                                    <ChevronLeft size={16} /> 上一步
+                                </button>
+                                <button 
+                                    onClick={handleNext}
+                                    disabled={currentStep === STEPS.length - 1}
+                                    className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-900/20 text-sm font-medium"
+                                >
+                                    {currentStep === STEPS.length - 1 ? '完成' : '下一步'} <ChevronRight size={16} />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<CSVVisualizer />);
+    </script>
+</body>
+</html>
