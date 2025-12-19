@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV 解析視覺化實驗室</title>
+    <title>柴柴 CSV 解析工廠</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -15,31 +15,33 @@
     <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts: Zen Maru Gothic for cuteness -->
+    <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;700&family=Noto+Sans+TC:wght@400;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
 
     <style>
         body {
-            font-family: 'Noto Sans TC', sans-serif;
+            font-family: 'Zen Maru Gothic', 'Noto Sans TC', sans-serif;
             overflow: hidden; /* Prevent scrolling on body */
+            background-color: #fff8e1;
         }
         code, pre, .font-mono {
             font-family: 'Roboto Mono', monospace;
         }
-        /* Custom scrollbar for code block */
+        /* Custom scrollbar for cute theme */
         ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
         }
         ::-webkit-scrollbar-track {
-            background: #111827; 
+            background: #fff8e1; 
         }
         ::-webkit-scrollbar-thumb {
-            background: #374151; 
-            border-radius: 4px;
+            background: #e6b422; /* Shiba Orange */
+            border-radius: 10px;
+            border: 2px solid #fff8e1;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: #4b5563; 
+            background: #d98e4d; 
         }
     </style>
 </head>
@@ -49,21 +51,27 @@
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
 
-        // --- Icons (Inline SVGs to avoid dependencies) ---
+        // --- Icons (Custom Shiba Themed SVGs) ---
+        const PawIcon = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className}>
+                <path d="M12 2C13.2426 2 14.25 3.00736 14.25 4.25C14.25 5.49264 13.2426 6.5 12 6.5C10.7574 6.5 9.75 5.49264 9.75 4.25C9.75 3.00736 10.7574 2 12 2ZM17.5 3.5C18.7426 3.5 19.75 4.50736 19.75 5.75C19.75 6.99264 18.7426 8 17.5 8C16.2574 8 15.25 6.99264 15.25 5.75C15.25 4.50736 16.2574 3.5 17.5 3.5ZM6.5 3.5C7.74264 3.5 8.75 4.50736 8.75 5.75C8.75 6.99264 7.74264 8 6.5 8C5.25736 8 4.25 6.99264 4.25 5.75C4.25 4.50736 5.25736 3.5 6.5 3.5ZM12 8C15.5 8 18.5 10.5 18.5 14.5C18.5 18 16 21.5 12 21.5C8 21.5 5.5 18 5.5 14.5C5.5 10.5 8.5 8 12 8Z"/>
+            </svg>
+        );
+
+        const BoneIcon = ({ size = 24, className = "" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                <path d="M17 10c.7-.7 1.69 0 2.5 0a2.5 2.5 0 1 0 0-5 .5.5 0 0 1-.5-.5 2.5 2.5 0 1 0-5 0c0 .81.7 1.8 0 2.5l-7 7c-.7.7-1.69 0-2.5 0a2.5 2.5 0 0 0 0 5c.28 0 .5.22.5.5a2.5 2.5 0 1 0 5 0c0-.81-.7-1.8 0-2.5l7-7Z"/>
+            </svg>
+        );
+
         const RotateCcw = ({ size = 24, className = "" }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12"/><path d="M3 3v9h9"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12"/><path d="M3 3v9h9"/></svg>
         );
         const ChevronRight = ({ size = 24, className = "" }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>
         );
         const ChevronLeft = ({ size = 24, className = "" }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6"/></svg>
-        );
-        const CodeIcon = ({ size = 24, className = "" }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-        );
-        const Database = ({ size = 24, className = "" }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s 9-1.34 9-3V5"/></svg>
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m15 18-6-6 6-6"/></svg>
         );
 
         // --- 1. Constants & Data ---
@@ -74,7 +82,7 @@
 2025/12/18 12:24,test,test,test,大四,不吃牛,`;
 
         const CODE_SNIPPET = `function csvToJson(csvText) {
-  // 1. 用換行符號切分出每一行
+  // 1. 汪！用換行符號切分出每一行
   const lines = csvText.split("\\n");
 
   // 2. 取出第一行當作「標題」(Headers)
@@ -98,70 +106,70 @@
     }
     result.push(obj);
   }
-  return result; // 回傳整理好的物件陣列
+  return result; // 完成！好吃的物件陣列
 }`;
 
         const STEPS = [
           {
             id: 0,
             title: "初始狀態",
-            desc: "這是我們從檔案或 API 讀取到的原始 CSV 字串內容。",
+            desc: "這是剛運來的原始 CSV 食材，還是一整塊沒切開的字串喔！",
             highlight: [],
             animationType: "raw"
           },
           {
             id: 1,
             title: "切分行 (Split Lines)",
-            desc: "使用 split('\\n') 將整塊文字依照換行符號切成陣列。",
+            desc: "柴柴使用 split('\\n') 刀法，把整塊食材切成一條一條的。",
             highlight: [2, 3],
             animationType: "split_lines"
           },
           {
             id: 2,
             title: "提取標題 (Parse Headers)",
-            desc: "取出陣列的第一筆資料 (lines[0])，並用逗號切分，這些將成為 JSON 物件的 Key。",
+            desc: "取出第一條 (lines[0]) 當作標籤，這些會變成我們 JSON 的 Key 喔。",
             highlight: [5, 6],
             animationType: "parse_headers"
           },
           {
             id: 3,
-            title: "準備容器與迴圈",
-            desc: "建立 result 空陣列，並準備從 index = 1 (第二行) 開始處理資料。",
+            title: "準備便當盒與迴圈",
+            desc: "準備好 result 便當盒，準備從第二行開始製作美味的資料。",
             highlight: [8, 11],
             animationType: "init_loop"
           },
           {
             id: 4,
             title: "處理第一筆資料：切分",
-            desc: "讀取 lines[1]，使用 split(',') 切分出該行的所有欄位值。",
+            desc: "讀取 lines[1]，使用 split(',') 把這行切成一塊塊的小餅乾。",
             highlight: [15],
             animationType: "process_row_1_split"
           },
           {
             id: 5,
-            title: "處理第一筆資料：映射 (Mapping)",
-            desc: "將 Headers 與當前行的欄位值一一對應。在記憶體中建立 { Key: Value } 的物件結構。",
+            title: "處理第一筆資料：組裝 (Mapping)",
+            desc: "把標籤 (Key) 跟餅乾 (Value) 配對起來，組裝成好吃的物件 (Object)！",
             highlight: [18, 19, 20, 21, 22],
             animationType: "process_row_1_map"
           },
           {
             id: 6,
-            title: "存入結果",
-            desc: "將組合好的物件 (Object) 放入 result 陣列中。",
+            title: "存入便當盒",
+            desc: "把組裝好的物件 (Object) 小心地放進 result 便當盒裡。",
             highlight: [24],
             animationType: "process_row_1_push"
           },
           {
             id: 7,
             title: "處理下一筆資料",
-            desc: "迴圈繼續執行，處理 lines[2]...",
+            desc: "繼續努力！處理下一行 lines[2]...",
             highlight: [11, 15],
             animationType: "process_row_2_split"
           },
           {
             id: 8,
-            title: "完成轉換",
-            desc: "所有資料處理完畢，回傳最終的 JSON 物件陣列。",
+            title: "大功告成",
+            desc: "所有資料都處理好了，JSON 便當製作完成！汪！",
             highlight: [26],
             animationType: "finish"
           }
@@ -231,20 +239,31 @@
                 const { width, height } = canvasSize;
                 const stepType = STEPS[stepIndex].animationType;
 
+                // --- Shiba Theme Colors ---
+                const colors = {
+                    bg: '#fff8e1',       // Cream background
+                    raw: '#5d4037',      // Dark Brown
+                    header: '#42a5f5',   // Soft Blue
+                    data: '#66bb6a',     // Soft Green
+                    accent: '#ffa726',   // Orange
+                    textMain: '#3e2723', // Very dark brown
+                    textLight: '#ffffff',
+                    grid: '#f0e3ca'      // Latte
+                };
+
                 // Clear
                 ctx.clearRect(0, 0, width, height);
-                ctx.fillStyle = '#111827'; // Darker background (Tailwind gray-900)
+                ctx.fillStyle = colors.bg;
                 ctx.fillRect(0, 0, width, height);
-
+                
                 // Config
                 const startX = 40;
                 const startY = 50;
-                const lineHeight = 35;
-                const boxGap = 10;
-                // Calculate fluid block width based on available space, keeping space for Result box
-                const resultBoxWidth = 300;
-                const workingAreaWidth = width - resultBoxWidth - 60; // 60 for margins
-                const blockWidth = Math.min((workingAreaWidth / 7) - boxGap, 120); 
+                const lineHeight = 40; // Taller for roundness
+                const boxGap = 12;
+                const resultBoxWidth = 320;
+                const workingAreaWidth = width - resultBoxWidth - 60;
+                const blockWidth = Math.min((workingAreaWidth / 7) - boxGap, 130); 
 
                 // --- Helper: Draw JSON Object Text ---
                 const drawJSONObject = (x, y, dataObj, headers, alpha = 1, scale = 1) => {
@@ -253,131 +272,143 @@
                     ctx.translate(x, y);
                     ctx.scale(scale, scale);
                     
-                    ctx.font = 'bold 14px "Roboto Mono", monospace';
+                    ctx.font = 'bold 15px "Roboto Mono", monospace';
                     ctx.textAlign = 'left';
                     ctx.textBaseline = 'top';
 
-                    const lineHeight = 18;
+                    const lineHeight = 20;
                     let currentY = 0;
 
                     // Draw Opening Brace
-                    ctx.fillStyle = '#e5e7eb'; // gray-200
+                    ctx.fillStyle = '#795548'; // Brown
                     ctx.fillText('{', 0, currentY);
                     currentY += lineHeight;
 
                     // Draw Key-Values
                     headers.forEach((h, i) => {
-                        // Limit display to 4 fields to save vertical space
                         if (i > 3) return; 
                         
                         const key = h.trim();
                         const val = dataObj[i] ? dataObj[i].trim() : "";
 
-                        // Indent
-                        const indent = 15;
+                        const indent = 20;
                         
                         // Key
-                        ctx.fillStyle = '#60a5fa'; // blue-400
+                        ctx.fillStyle = '#ef6c00'; // Orange darken
                         ctx.fillText(`"${key}"`, indent, currentY);
                         const keyWidth = ctx.measureText(`"${key}"`).width;
                         
                         // Colon
-                        ctx.fillStyle = '#9ca3af'; // gray-400
+                        ctx.fillStyle = '#9e9e9e'; 
                         ctx.fillText(`: `, indent + keyWidth, currentY);
                         const colonWidth = ctx.measureText(`: `).width;
 
                         // Value
-                        ctx.fillStyle = '#a3e635'; // lime-400
+                        ctx.fillStyle = '#2e7d32'; // Green darken
                         ctx.fillText(`"${val}"`, indent + keyWidth + colonWidth, currentY);
                         
-                        // Comma (if not last displayed)
+                        // Comma
                         if (i < Math.min(headers.length, 4) - 1) {
                              const totalWidth = indent + keyWidth + colonWidth + ctx.measureText(`"${val}"`).width;
-                             ctx.fillStyle = '#e5e7eb';
+                             ctx.fillStyle = '#bdbdbd';
                              ctx.fillText(`,`, totalWidth, currentY);
                         }
                         
                         currentY += lineHeight;
                     });
 
-                    // Ellipsis if truncated
                     if (headers.length > 4) {
-                        ctx.fillStyle = '#6b7280';
+                        ctx.fillStyle = '#bdbdbd';
                         ctx.fillText(`  ...`, 0, currentY);
                         currentY += lineHeight;
                     }
 
-                    // Draw Closing Brace
-                    ctx.fillStyle = '#e5e7eb';
+                    ctx.fillStyle = '#795548';
                     ctx.fillText('},', 0, currentY);
                     
                     ctx.restore();
-                    return currentY + lineHeight; // return height used
+                    return currentY + lineHeight;
                 };
 
-                // --- Helper: Draw Block ---
-                const drawBlock = (text, x, y, w, h, color = '#3b82f6', alpha = 1, borderColor = null, fontSize = 12) => {
+                // --- Helper: Draw Block (Cute Version) ---
+                const drawBlock = (text, x, y, w, h, color, alpha = 1, borderColor = null, fontSize = 13) => {
+                    ctx.save();
                     ctx.globalAlpha = alpha;
                     ctx.fillStyle = color;
                     
-                    // Shadow
-                    ctx.shadowColor = 'rgba(0,0,0,0.3)';
-                    ctx.shadowBlur = 4;
-                    ctx.shadowOffsetY = 2;
+                    // Cute Shadow
+                    ctx.shadowColor = 'rgba(93, 64, 55, 0.2)'; // Brownish shadow
+                    ctx.shadowBlur = 6;
+                    ctx.shadowOffsetY = 3;
 
                     ctx.beginPath();
                     if (ctx.roundRect) {
-                        ctx.roundRect(x, y, w, h, 6);
+                        ctx.roundRect(x, y, w, h, 12); // Rounder corners
                     } else {
                         ctx.rect(x, y, w, h);
                     }
                     ctx.fill();
                     
-                    ctx.shadowColor = 'transparent'; // Reset shadow
+                    ctx.shadowColor = 'transparent';
 
                     if (borderColor) {
                         ctx.strokeStyle = borderColor;
-                        ctx.lineWidth = 2;
+                        ctx.lineWidth = 3;
                         ctx.stroke();
                     }
 
                     ctx.fillStyle = '#ffffff';
-                    ctx.font = `${fontSize}px "Noto Sans TC", sans-serif`;
+                    ctx.font = `bold ${fontSize}px "Zen Maru Gothic", sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
                     
-                    // Smart Truncation
                     let displayText = text;
                     const metrics = ctx.measureText(text);
                     if (metrics.width > w - 10) {
-                        // approximate char width
                         const avgCharWidth = metrics.width / text.length;
                         const maxChars = Math.floor((w - 20) / avgCharWidth);
                         displayText = text.substring(0, maxChars) + '..';
                     }
                     
-                    ctx.fillText(displayText, x + w / 2, y + h / 2);
+                    ctx.fillText(displayText, x + w / 2, y + h / 2 + 1); // +1 for visual center
                     ctx.globalAlpha = 1;
+                    ctx.restore();
                 };
 
-                // Helper: Draw Bracket/Container
+                // Helper: Draw Container (Cute Dash)
                 const drawContainer = (x, y, w, h, label) => {
-                    ctx.strokeStyle = '#4b5563'; // gray-600
-                    ctx.lineWidth = 2;
-                    ctx.setLineDash([6, 6]);
-                    ctx.strokeRect(x, y, w, h);
+                    ctx.save();
+                    ctx.strokeStyle = '#d7ccc8'; // Light brown
+                    ctx.lineWidth = 3;
+                    ctx.setLineDash([10, 10]);
+                    
+                    ctx.beginPath();
+                    if (ctx.roundRect) {
+                        ctx.roundRect(x, y, w, h, 16);
+                    } else {
+                        ctx.rect(x, y, w, h);
+                    }
+                    ctx.stroke();
+                    
                     ctx.setLineDash([]);
                     
-                    // Label background
-                    ctx.fillStyle = '#111827';
-                    const labelWidth = ctx.measureText(label).width + 10;
-                    ctx.fillRect(x + 10, y - 10, labelWidth, 20);
+                    // Label Tag
+                    const labelW = 160;
+                    ctx.fillStyle = '#8d6e63'; // Brown tag
+                    ctx.beginPath();
+                    if (ctx.roundRect) {
+                        ctx.roundRect(x + 10, y - 15, labelW, 30, 15);
+                    } else {
+                        ctx.rect(x + 10, y - 15, labelW, 30);
+                    }
+                    ctx.fill();
 
-                    ctx.fillStyle = '#9ca3af'; // gray-400
-                    ctx.font = 'bold 14px "Roboto Mono", monospace';
-                    ctx.textAlign = 'left';
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 14px "Zen Maru Gothic", sans-serif';
+                    ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(label, x + 15, y);
+                    ctx.fillText(label, x + 10 + labelW/2, y);
+                    ctx.restore();
                 };
 
                 const { lines, headers, rows } = processedData;
@@ -386,21 +417,36 @@
 
                 // 1. Scene: Raw Text Block
                 if (stepType === 'raw') {
-                    ctx.fillStyle = '#1f2937'; // gray-800
-                    ctx.fillRect(startX, startY, workingAreaWidth, lines.length * lineHeight + 40);
-                    ctx.strokeStyle = '#374151';
-                    ctx.strokeRect(startX, startY, workingAreaWidth, lines.length * lineHeight + 40);
+                    const boxH = lines.length * lineHeight + 50;
+                    
+                    // Paper style background
+                    ctx.fillStyle = '#fff3e0'; // Orange-ish paper
+                    ctx.beginPath();
+                    if (ctx.roundRect) {
+                        ctx.roundRect(startX, startY, workingAreaWidth, boxH, 10);
+                    } else {
+                        ctx.rect(startX, startY, workingAreaWidth, boxH);
+                    }
+                    ctx.fill();
+                    ctx.strokeStyle = '#ffb74d';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
 
-                    ctx.fillStyle = '#e5e7eb';
+                    ctx.fillStyle = colors.textMain;
                     ctx.font = '14px "Roboto Mono", monospace';
                     ctx.textAlign = 'left';
                     lines.forEach((line, i) => {
-                        ctx.fillText(line, startX + 15, startY + 30 + (i * lineHeight));
+                        ctx.fillText(line, startX + 20, startY + 40 + (i * lineHeight));
                     });
                     
-                    ctx.fillStyle = '#fbbf24'; // amber-400
-                    ctx.font = 'bold 16px "Noto Sans TC", sans-serif';
-                    ctx.fillText("CSV 原始字串 (Raw String)", startX, startY - 15);
+                    // Label
+                    ctx.fillStyle = '#ef6c00';
+                    ctx.font = 'bold 18px "Zen Maru Gothic", sans-serif';
+                    ctx.fillText("📦 CSV 原始食材", startX, startY - 15);
+
+                    // Shiba Face
+                    ctx.font = '40px serif';
+                    ctx.fillText("🐕", startX + workingAreaWidth - 40, startY - 10);
                 }
 
                 // 2. Scene: Process Rows & Headers
@@ -409,27 +455,58 @@
                     const isSplitAnim = stepType === 'split_lines';
                     const gap = isSplitAnim ? lerp(0, 15, t) : 15;
 
+                    // FIX: Draw Construction Zone Background FIRST (Layer 0)
+                    if (stepType === 'process_row_1_map') {
+                         ctx.save();
+                         ctx.globalAlpha = t;
+                         const zoneY = startY + 170;
+                         const zoneH = 120;
+                         
+                         ctx.fillStyle = 'rgba(255, 224, 178, 0.5)'; // More opaque
+                         ctx.beginPath();
+                         if (ctx.roundRect) {
+                             ctx.roundRect(startX - 10, zoneY, workingAreaWidth + 20, zoneH, 20);
+                         } else {
+                             ctx.rect(startX - 10, zoneY, workingAreaWidth + 20, zoneH);
+                         }
+                         ctx.fill();
+                         
+                         ctx.strokeStyle = '#ffcc80';
+                         ctx.lineWidth = 2;
+                         ctx.setLineDash([5, 5]);
+                         ctx.stroke();
+                         ctx.setLineDash([]);
+                         
+                         ctx.fillStyle = '#ef6c00';
+                         ctx.font = 'bold 16px "Zen Maru Gothic"';
+                         ctx.fillText("🥣 正在組裝物件 (Mapping)", startX + workingAreaWidth/2, zoneY - 20);
+                         
+                         // Cute Chef Shiba
+                         ctx.font = '30px serif';
+                         ctx.fillText("👨‍🍳", startX + workingAreaWidth + 10, zoneY + 50);
+
+                         ctx.globalAlpha = 1;
+                         ctx.restore();
+                    }
+
+                    // Loop lines (Layer 1: Text Blocks)
                     lines.forEach((line, i) => {
-                        // Base position
                         let y = startY + i * (lineHeight + gap);
                         let x = startX;
-                        let w = workingAreaWidth; // Use calculated fluid width
-                        let color = '#374151'; // Gray for unprocessed
+                        let w = workingAreaWidth;
+                        let color = '#a1887f'; // Brown-Gray
                         let alpha = 1;
 
-                        // Visual States based on steps
-                        if (i === 0) { // Header Row
-                            if (stepIndex >= 2) color = '#1e40af'; // Blue-800
-                        } else { // Data Rows
-                            if (stepIndex >= 4 && i === 1) color = '#065f46'; // Green-800
-                            if (stepIndex >= 7 && i === 2) color = '#065f46';
+                        if (i === 0) { // Header
+                            if (stepIndex >= 2) color = '#64b5f6'; // Blue
+                        } else { // Data
+                            if (stepIndex >= 4 && i === 1) color = '#81c784'; // Green
+                            if (stepIndex >= 7 && i === 2) color = '#81c784';
                         }
 
-                        // Ghost out finished rows or irrelevant rows
                         if (stepType === 'process_row_1_map' && i !== 1 && i !== 0) alpha = 0.1;
                         if (stepType === 'process_row_1_push' && i !== 0) alpha = 0.1;
 
-                        // Draw the full line strip (if not yet split into tokens)
                         const isHeaderSplit = stepIndex >= 2 && i === 0;
                         const isRow1Split = stepIndex >= 4 && i === 1;
                         const isRow2Split = stepIndex >= 7 && i === 2;
@@ -437,70 +514,64 @@
                         if ((i === 0 && !isHeaderSplit) || (i === 1 && !isRow1Split) || (i === 2 && !isRow2Split) || i > 2) {
                             if (alpha > 0.05) drawBlock(line, x, y, w, lineHeight, color, alpha, null, 14);
                         } else {
-                            // Draw Split Tokens
                             const tokens = line.split(',');
                             tokens.forEach((token, j) => {
-                                // Calculate target split positions
                                 const targetX = startX + j * (blockWidth + boxGap);
-                                
-                                // Animation for splitting
                                 let curX = isSplitAnim ? targetX : targetX; 
                                 if ((stepType === 'parse_headers' && i === 0) || (stepType === 'process_row_1_split' && i === 1)) {
                                     curX = lerp(startX, targetX, t);
                                 }
 
-                                // Token Colors
                                 let tokenColor = color;
-                                if (i === 0) tokenColor = `hsl(${210 + j * 10}, 60%, 35%)`; // Blues
-                                if (i > 0) tokenColor = `hsl(${150 + j * 10}, 50%, 25%)`; // Greens
+                                if (i === 0) tokenColor = `hsl(${200 + j * 10}, 80%, 65%)`; // Pastel Blues
+                                if (i > 0) tokenColor = `hsl(${140 + j * 10}, 60%, 65%)`; // Pastel Greens
 
-                                // Mapping Animation Logic (Step 5)
+                                // Animation logic 
                                 let curY = y;
                                 let curAlpha = alpha;
                                 
+                                // Mapping Step (Step 5)
                                 if (stepType === 'process_row_1_map' && (i === 0 || i === 1)) {
-                                    // Move to "Construction Zone"
                                     const meetY = startY + 180;
-                                    // Header comes down
-                                    if (i === 0) {
-                                        curY = lerp(y, meetY, t);
-                                        // Slight horizontal shift to center align with value visually if needed
-                                    }
-                                    // Value comes up
+                                    if (i === 0) curY = lerp(y, meetY, t);
+                                    if (i === 1) curY = lerp(y, meetY + 50, t);
+                                }
+
+                                // Push Step (Step 6) - Fix for Ghosting and Snapping
+                                if (stepType === 'process_row_1_push') {
                                     if (i === 1) {
-                                        curY = lerp(y, meetY + 40, t);
+                                        // Row 1: Move from Mapping Pos to Result
+                                        const finalX = width - resultBoxWidth + 50;
+                                        const finalY = 150;
+                                        const mapY = startY + 180 + 50; // Previous Pos
+                                        curX = lerp(targetX, finalX, t);
+                                        curY = lerp(mapY, finalY, t);
+                                        curAlpha = 1 - t; // Fade out
+                                    } else if (i === 0) {
+                                        // Header: Move from Mapping Pos back to Original
+                                        const mapY = startY + 180;
+                                        curY = lerp(mapY, y, t); // Float back up
                                     }
                                 }
 
-                                // Push Animation Logic (Step 6)
-                                if (stepType === 'process_row_1_push' && i === 1) {
-                                    // Move towards result box and fade out (morph into JSON text)
-                                    const finalX = width - resultBoxWidth + 50;
-                                    const finalY = 150;
-                                    
-                                    curX = lerp(targetX, finalX, t);
-                                    curY = lerp(startY + 180 + 40, finalY, t); // Start from mapping pos
-                                    curAlpha = 1 - t; // Fade out as it moves
-                                }
+                                if (stepIndex > 6 && i === 1) return; // Hide row 1 after push
 
-                                // Skip drawing row 1 tokens if they are pushed and faded out
-                                if (stepIndex > 6 && i === 1) return;
-
-                                drawBlock(token, curX, curY, blockWidth, lineHeight, tokenColor, curAlpha, null, 12);
+                                drawBlock(token, curX, curY, blockWidth, lineHeight, tokenColor, curAlpha, null, 13);
                                 
-                                // Draw Mapping Connection Lines (Visual Glue)
+                                // Mapping Connection (Cute dashed line)
                                 if (stepType === 'process_row_1_map' && i === 0) {
                                     const headerBottom = curY + lineHeight;
-                                    const valueTop = lerp(startY + 1 * (lineHeight + gap), startY + 180 + 40, t);
+                                    const valueTop = lerp(startY + 1 * (lineHeight + gap), startY + 180 + 50, t);
                                     
                                     if (t > 0.5) {
                                         ctx.globalAlpha = (t - 0.5) * 2;
                                         ctx.beginPath();
                                         ctx.moveTo(curX + blockWidth/2, headerBottom);
                                         ctx.lineTo(curX + blockWidth/2, valueTop);
-                                        ctx.strokeStyle = '#fbbf24'; // Amber
-                                        ctx.lineWidth = 2;
-                                        ctx.setLineDash([2, 2]);
+                                        ctx.strokeStyle = '#ffa726'; // Orange
+                                        ctx.lineWidth = 3;
+                                        ctx.lineCap = 'round'; // Fixed typo here
+                                        ctx.setLineDash([0, 8]); // Dots
                                         ctx.stroke();
                                         ctx.setLineDash([]);
                                         ctx.globalAlpha = 1;
@@ -509,100 +580,76 @@
                             });
                         }
                     });
-
-                    // Visualize "Object Construction" in Center (Step 5)
-                    if (stepType === 'process_row_1_map') {
-                         ctx.globalAlpha = t;
-                         ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-                         const zoneY = startY + 170;
-                         const zoneH = 100;
-                         ctx.roundRect(startX - 10, zoneY, workingAreaWidth + 20, zoneH, 10);
-                         ctx.fill();
-                         ctx.strokeStyle = '#6366f1'; // Indigo
-                         ctx.stroke();
-                         
-                         ctx.fillStyle = '#a5b4fc';
-                         ctx.font = '14px sans-serif';
-                         ctx.fillText("正在組合 Object (Mapping)", startX + workingAreaWidth/2, zoneY - 15);
-                         ctx.globalAlpha = 1;
-                    }
                 }
 
-                // 3. Scene: Result Array Container
+                // 3. Scene: Result Array
                 if (stepIndex >= 3) {
                     const resX = width - resultBoxWidth + 10;
-                    const resY = 80;
+                    const resY = 90;
                     const resW = resultBoxWidth - 20;
-                    const resH = height - 100;
+                    const resH = height - 120;
                     
                     ctx.globalAlpha = stepIndex === 3 ? t : 1;
-                    drawContainer(resX, resY, resW, resH, "const result = [ ]");
+                    drawContainer(resX, resY, resW, resH, "🍱 const result = [ ]");
                     
-                    // Draw Array Start Bracket
-                    ctx.fillStyle = '#f3f4f6';
-                    ctx.font = 'bold 16px monospace';
-                    ctx.fillText("[", resX + 10, resY + 30);
+                    // Shiba guarding the result
+                    ctx.font = '24px serif';
+                    ctx.fillText("🐕", resX + resW - 30, resY - 5);
+
+                    ctx.fillStyle = '#795548';
+                    ctx.font = 'bold 18px monospace';
+                    ctx.fillText("[", resX + 15, resY + 40);
                     
                     ctx.globalAlpha = 1;
 
-                    let currentY = resY + 50;
+                    let currentY = resY + 60;
 
-                    // Draw items inside result
                     if (stepIndex >= 6) {
-                        // If pushing, animate the appearance of the JSON Text
                         let scale = 1;
                         let alpha = 1;
                         if (stepType === 'process_row_1_push') {
-                            scale = 0.8 + (0.2 * t); // slight zoom in
-                            alpha = t; // fade in
+                            scale = 0.8 + (0.2 * t);
+                            alpha = t;
                         }
-
-                        // Draw Object 1
                         const row1Data = rows[0];
-                        const usedH = drawJSONObject(resX + 20, currentY, row1Data, headers, alpha, scale);
+                        const usedH = drawJSONObject(resX + 25, currentY, row1Data, headers, alpha, scale);
                         currentY += usedH + 10;
                     }
                     
-                    // Future: Draw Object 2 placeholder if needed for step 7+
-                    // For now, only row 1 is fully animated.
-                    
                     if (stepIndex >= 6) {
-                         ctx.fillStyle = '#f3f4f6';
-                         ctx.font = 'bold 16px monospace';
-                         ctx.fillText("]", resX + 10, currentY);
+                         ctx.fillStyle = '#795548';
+                         ctx.font = 'bold 18px monospace';
+                         ctx.fillText("]", resX + 15, currentY);
                     }
                 }
                 
-                // Final Scene Overlay
+                // Final Scene
                 if (stepType === 'finish') {
-                    // Darken background
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
+                    ctx.fillStyle = 'rgba(255, 248, 225, 0.9)'; // Light cream overlay
                     ctx.fillRect(0, 0, width, height);
                     
                     const centerY = height / 2;
                     
-                    ctx.fillStyle = '#4ade80'; // green-400
-                    ctx.font = 'bold 28px "Noto Sans TC", sans-serif';
+                    // Shiba Party
+                    ctx.font = '60px serif';
                     ctx.textAlign = 'center';
-                    ctx.fillText("轉換完成！ (JSON Array)", width/2, centerY - 100);
+                    ctx.fillText("🐕 🎉 🐩", width/2, centerY - 140);
+
+                    ctx.fillStyle = '#ef6c00';
+                    ctx.font = 'bold 32px "Zen Maru Gothic", sans-serif';
+                    ctx.fillText("轉換完成！開動囉！", width/2, centerY - 80);
                     
-                    // Draw a big nice JSON representation of 2 rows
-                    const startJsonY = centerY - 50;
+                    const startJsonY = centerY - 40;
                     const jsonX = width / 2 - 150;
                     
-                    ctx.fillStyle = '#f3f4f6';
                     ctx.font = '16px "Roboto Mono", monospace';
                     ctx.textAlign = 'left';
+                    ctx.fillStyle = '#5d4037';
                     
                     ctx.fillText("[", jsonX, startJsonY);
-                    
-                    // Row 1
                     let h1 = drawJSONObject(jsonX + 20, startJsonY + 25, rows[0], headers);
-                    
-                    // Row 2
                     let h2 = drawJSONObject(jsonX + 20, startJsonY + 25 + h1 + 5, rows[1], headers);
-
-                    ctx.fillStyle = '#f3f4f6';
+                    ctx.fillStyle = '#5d4037';
                     ctx.fillText("]", jsonX, startJsonY + 25 + h1 + 5 + h2 + 10);
                 }
             };
@@ -621,21 +668,21 @@
             };
 
             return (
-                <div className="flex flex-col md:flex-row h-screen bg-gray-900 text-white overflow-hidden font-sans">
+                <div className="flex flex-col md:flex-row h-screen bg-[#fff8e1] text-[#4e342e] overflow-hidden font-sans">
                 
                 {/* Left Panel: Visualization Canvas */}
-                <div className="flex-1 relative bg-gray-950 border-r border-gray-800 flex flex-col">
-                    <div className="p-4 border-b border-gray-800 flex justify-between items-center bg-gray-900/50 backdrop-blur">
-                    <h2 className="text-lg font-bold text-blue-400 flex items-center gap-2">
-                        <Database size={20} />
-                        視覺化畫布
-                    </h2>
-                    <div className="text-sm text-gray-400">
-                        Step: {currentStep + 1} / {STEPS.length}
-                    </div>
+                <div className="flex-1 relative bg-[#fff8e1] flex flex-col">
+                    <div className="p-4 border-b-2 border-[#ffe0b2] flex justify-between items-center bg-[#fff3e0]">
+                        <h2 className="text-xl font-bold text-[#ef6c00] flex items-center gap-2">
+                            <PawIcon size={24} className="text-[#ef6c00]" />
+                            柴柴視覺化畫布
+                        </h2>
+                        <div className="text-sm font-bold text-[#8d6e63] bg-[#fff8e1] px-3 py-1 rounded-full border border-[#ffe0b2]">
+                            Step: {currentStep + 1} / {STEPS.length} 🐾
+                        </div>
                     </div>
                     
-                    <div ref={containerRef} className="flex-1 w-full h-full relative overflow-hidden">
+                    <div ref={containerRef} className="flex-1 w-full h-full relative overflow-hidden bg-white/50">
                         <canvas 
                             ref={canvasRef}
                             width={canvasSize.width}
@@ -644,96 +691,105 @@
                         />
                         
                         {/* Legend / Overlay */}
-                        <div className="absolute bottom-4 left-4 flex gap-4 text-xs bg-black/60 p-2 rounded backdrop-blur select-none z-10">
-                            <div className="flex items-center gap-1"><div className="w-3 h-3 bg-blue-700 rounded"></div> 標題 (Header)</div>
-                            <div className="flex items-center gap-1"><div className="w-3 h-3 bg-green-800 rounded"></div> 資料 (Data)</div>
-                            <div className="flex items-center gap-1"><div className="w-3 h-3 border border-gray-500 rounded flex justify-center items-center text-[8px] text-white font-mono">{"{ }"}</div> JSON 物件</div>
+                        <div className="absolute bottom-4 left-4 flex gap-4 text-xs bg-white/90 p-3 rounded-2xl shadow-lg border-2 border-[#ffe0b2] select-none z-10 font-bold text-[#5d4037]">
+                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[#64b5f6] rounded-full"></div> 標題 (Header)</div>
+                            <div className="flex items-center gap-2"><div className="w-3 h-3 bg-[#81c784] rounded-full"></div> 資料 (Data)</div>
+                            <div className="flex items-center gap-2"><div className="w-3 h-3 border-2 border-[#ef6c00] border-dashed rounded flex justify-center items-center text-[6px]"></div> 物件 (Object)</div>
                         </div>
                     </div>
                 </div>
 
                 {/* Right Panel: Code & Controls */}
-                <div className="w-full md:w-[450px] flex flex-col bg-gray-900 border-l border-gray-800">
+                <div className="w-full md:w-[450px] flex flex-col bg-[#fff3e0] border-l-4 border-[#ffcc80] shadow-xl">
                     
                     {/* Header */}
-                    <div className="p-4 border-b border-gray-800 bg-gray-900 z-10">
-                    <h1 className="text-xl font-bold mb-1 text-white">CSV to JSON 解析教學</h1>
-                    <p className="text-gray-400 text-sm">學習如何將逗號分隔字串轉換為物件陣列</p>
+                    <div className="p-5 border-b-2 border-[#ffe0b2] bg-[#ffe0b2] z-10">
+                        <h1 className="text-2xl font-bold mb-1 text-[#e65100] flex items-center gap-2">
+                            <BoneIcon size={28} />
+                            CSV to JSON 廚房
+                        </h1>
+                        <p className="text-[#795548] text-sm font-bold">跟著柴柴一起把生食 (CSV) 煮成便當 (JSON)！</p>
                     </div>
 
                     {/* Code View */}
-                    <div className="flex-1 overflow-auto p-4 bg-[#0d1117]">
-                    <div className="font-mono text-sm leading-6 relative">
-                        {/* Line Numbers */}
-                        <div className="absolute left-0 top-0 text-gray-600 select-none text-right pr-3 border-r border-gray-700 h-full w-8">
-                            {CODE_SNIPPET.split('\n').map((_, i) => (
-                                <div key={i} style={{height: '24px'}}>{i + 1}</div>
-                            ))}
+                    <div className="flex-1 overflow-auto p-4 bg-[#4a403a]">
+                        <div className="font-mono text-sm leading-6 relative text-[#efebe9]">
+                            {/* Line Numbers */}
+                            <div className="absolute left-0 top-0 text-[#a1887f] select-none text-right pr-3 border-r border-[#6d4c41] h-full w-8 font-bold">
+                                {CODE_SNIPPET.split('\n').map((_, i) => (
+                                    <div key={i} style={{height: '24px'}}>{i + 1}</div>
+                                ))}
+                            </div>
+                            
+                            {/* Code Lines */}
+                            <div className="pl-10">
+                                {CODE_SNIPPET.split('\n').map((line, i) => {
+                                    const isHighlighted = STEPS[currentStep].highlight.includes(i + 1);
+                                    return (
+                                        <div 
+                                            key={i} 
+                                            className={`whitespace-pre px-2 transition-colors duration-300 rounded-lg my-0.5 ${isHighlighted ? 'bg-[#ffcc80] text-[#bf360c] font-bold shadow-md transform scale-[1.02]' : 'text-[#d7ccc8]'}`}
+                                            style={{height: '24px'}}
+                                        >
+                                            {line}
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
-                        
-                        {/* Code Lines */}
-                        <div className="pl-10">
-                            {CODE_SNIPPET.split('\n').map((line, i) => {
-                                const isHighlighted = STEPS[currentStep].highlight.includes(i + 1);
-                                return (
-                                    <div 
-                                        key={i} 
-                                        className={`whitespace-pre px-2 transition-colors duration-300 rounded-sm ${isHighlighted ? 'bg-blue-900/40 border-l-2 border-blue-400' : 'text-gray-400'}`}
-                                        style={{height: '24px'}}
-                                    >
-                                        <span className={isHighlighted ? 'text-blue-100 font-semibold' : ''}>{line}</span>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
                     </div>
 
                     {/* Footer: Controls & Description */}
-                    <div className="border-t border-gray-800 bg-gray-900 p-4 shadow-lg z-10">
+                    <div className="border-t-2 border-[#ffe0b2] bg-[#fff8e1] p-5 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] z-10">
                         {/* Step Description */}
-                        <div className="mb-4 min-h-[80px]">
-                            <h3 className="font-bold text-blue-400 mb-2 flex items-center gap-2">
-                                <CodeIcon size={16}/>
+                        <div className="mb-4 min-h-[90px] bg-white p-4 rounded-2xl border-2 border-[#ffe0b2] relative">
+                            {/* Speech Bubble Triangle */}
+                            <div className="absolute top-[-12px] left-6 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[12px] border-b-[#ffe0b2]"></div>
+                            <div className="absolute top-[-9px] left-6 w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[12px] border-b-white"></div>
+                            
+                            <h3 className="font-bold text-[#e65100] mb-2 flex items-center gap-2 text-lg">
+                                <span className="text-xl">🐕</span>
                                 Step {currentStep + 1}: {STEPS[currentStep].title}
                             </h3>
-                            <p className="text-gray-300 text-sm leading-relaxed border-l-2 border-gray-600 pl-3">
+                            <p className="text-[#5d4037] text-sm leading-relaxed font-medium">
                                 {STEPS[currentStep].desc}
                             </p>
                         </div>
 
                         {/* Progress Bar */}
-                        <div className="h-1 bg-gray-700 w-full mb-4 rounded overflow-hidden">
+                        <div className="h-3 bg-[#ffe0b2] w-full mb-5 rounded-full overflow-hidden border border-[#ffcc80]">
                             <div 
-                                className="h-full bg-blue-500 transition-all duration-300 ease-out" 
+                                className="h-full bg-[#ef6c00] transition-all duration-300 ease-out rounded-full relative" 
                                 style={{width: `${((currentStep + 1) / STEPS.length) * 100}%`}}
-                            ></div>
+                            >
+                                <div className="absolute right-0 top-0 bottom-0 w-2 bg-white/30 animate-pulse"></div>
+                            </div>
                         </div>
 
                         {/* Buttons */}
-                        <div className="flex justify-between gap-2">
+                        <div className="flex justify-between gap-3">
                             <button 
                                 onClick={handleRestart}
-                                className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors"
+                                className="p-3 text-[#8d6e63] hover:text-[#e65100] hover:bg-[#ffe0b2] rounded-full transition-all border-2 border-transparent hover:border-[#ffcc80]"
                                 title="重新開始"
                             >
-                                <RotateCcw size={20} />
+                                <RotateCcw size={22} />
                             </button>
                             
-                            <div className="flex gap-2">
+                            <div className="flex gap-3">
                                 <button 
                                     onClick={handlePrev}
                                     disabled={currentStep === 0}
-                                    className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-white rounded hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm font-medium"
+                                    className="flex items-center gap-2 px-5 py-2.5 bg-[#8d6e63] text-white rounded-full hover:bg-[#6d4c41] disabled:opacity-50 disabled:cursor-not-allowed transition-all font-bold shadow-md active:translate-y-0.5"
                                 >
-                                    <ChevronLeft size={16} /> 上一步
+                                    <ChevronLeft size={18} /> 上一步
                                 </button>
                                 <button 
                                     onClick={handleNext}
                                     disabled={currentStep === STEPS.length - 1}
-                                    className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-900/20 text-sm font-medium"
+                                    className="flex items-center gap-2 px-8 py-2.5 bg-[#ef6c00] text-white rounded-full hover:bg-[#e65100] disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-orange-200 active:translate-y-0.5 font-bold text-lg"
                                 >
-                                    {currentStep === STEPS.length - 1 ? '完成' : '下一步'} <ChevronRight size={16} />
+                                    {currentStep === STEPS.length - 1 ? '完成！' : '下一步'} <ChevronRight size={20} />
                                 </button>
                             </div>
                         </div>
