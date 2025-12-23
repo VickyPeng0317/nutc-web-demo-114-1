@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML/JS 混淆打包神器 (防誤判版)</title>
+    
+    <!-- 引入 JS 混淆核心庫 (Browser Version) -->
+    <script src="https://cdn.jsdelivr.net/npm/javascript-obfuscator/dist/index.browser.js"></script>
+    <!-- 引入 JSZip 用於打包下載 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    
+    <!-- Tailwind CSS for UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f3f4f6; }
+        .code-editor {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            tab-size: 4;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Navbar -->
+    <nav class="bg-indigo-600 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center gap-3">
+            <i data-lucide="shield-check" class="w-8 h-8"></i>
+            <div>
+                <h1 class="text-xl font-bold">HTML/JS 混淆打包神器</h1>
+                <p class="text-xs text-indigo-200">前端原始碼保護工具 (低誤判優化版)</p>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-7xl mx-auto w-full p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- 左側：輸入區 -->
+        <div class="flex flex-col gap-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col h-full">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="font-bold text-gray-700 flex items-center gap-2">
+                        <i data-lucide="file-code" class="w-5 h-5 text-indigo-500"></i>
+                        原始 HTML 程式碼
+                    </h2>
+                    <span class="text-xs text-gray-400">請貼上包含 &lt;script&gt; 的完整 HTML</span>
+                </div>
+                <textarea id="inputHtml" class="code-editor w-full flex-grow p-4 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none h-[500px]" placeholder="<!DOCTYPE html>
+<html>
+<body>
+    <h1>Hello</h1>
+    <script>
+        // 您的秘密程式碼
+        const secret = '12345';
+        console.log(secret);
+    </script>
+</body>
+</html>"></textarea>
+            </div>
+        </div>
+
+        <!-- 右側：控制與輸出 -->
+        <div class="flex flex-col gap-6">
+            
+            <!-- 控制面板 -->
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="font-bold text-gray-700 mb-4 flex items-center gap-2">
+                    <i data-lucide="settings" class="w-5 h-5 text-indigo-500"></i>
+                    混淆設定
+                </h2>
+                
+                <div class="p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-800 mb-4 flex gap-2">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 flex-shrink-0"></i>
+                    <p>若遇到下載檔案被防毒軟體攔截，請取消勾選「防除錯保護」與「自我防衛機制」。</p>
+                </div>
+                
+                <div class="grid grid-cols-1 gap-3 mb-6">
+                    <label class="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-indigo-50 transition-colors">
+                        <input type="checkbox" id="optCompact" checked class="w-4 h-4 text-indigo-600">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-medium">壓縮程式碼 (Compact)</span>
+                            <span class="text-xs text-gray-500">將程式碼壓縮成一行，難以閱讀。</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-indigo-50 transition-colors">
+                        <input type="checkbox" id="optFlatten" checked class="w-4 h-4 text-indigo-600">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-medium">邏輯扁平化 (Control Flow Flattening)</span>
+                            <span class="text-xs text-gray-500">打亂程式執行順序，大幅增加逆向難度。</span>
+                        </div>
+                    </label>
+                    
+                    <label class="flex items-center gap-2 p-3 border rounded-lg cursor-pointer hover:bg-indigo-50 transition-colors">
+                        <input type="checkbox" id="optStringEncrypt" checked class="w-4 h-4 text-indigo-600">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-medium">字串加密 (String Array)</span>
+                            <span class="text-xs text-gray-500">將文字轉為編碼，隱藏敏感資訊。</span>
+                        </div>
+                    </label>
+
+                    <hr class="border-gray-200 my-2">
+                    <span class="text-xs font-bold text-red-500 uppercase tracking-wide">高風險選項 (易被防毒誤判)</span>
+
+                    <label class="flex items-center gap-2 p-3 border border-red-100 bg-red-50 rounded-lg cursor-pointer hover:bg-red-100 transition-colors">
+                        <input type="checkbox" id="optDebugProtect" class="w-4 h-4 text-red-600">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-medium text-red-800">防除錯保護 (Anti-Debug)</span>
+                            <span class="text-xs text-red-600">開啟後 F12 會卡住，但極易被視為病毒。</span>
+                        </div>
+                    </label>
+                    
+                    <label class="flex items-center gap-2 p-3 border border-red-100 bg-red-50 rounded-lg cursor-pointer hover:bg-red-100 transition-colors">
+                        <input type="checkbox" id="optSelfDefending" class="w-4 h-4 text-red-600">
+                        <div class="flex flex-col">
+                            <span class="text-sm font-medium text-red-800">自我防衛機制 (Self-Defending)</span>
+                            <span class="text-xs text-red-600">程式碼被格式化時會停止運作，易被誤判。</span>
+                        </div>
+                    </label>
+                </div>
+
+                <button id="btnProcess" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-md transition-all active:scale-[0.98] flex justify-center items-center gap-2">
+                    <i data-lucide="zap" class="w-5 h-5"></i>
+                    開始混淆並產生檔案
+                </button>
+            </div>
+
+            <!-- 結果輸出 -->
+            <div id="resultArea" class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 hidden">
+                <div class="flex items-center gap-2 mb-4 text-green-600 font-bold bg-green-50 p-3 rounded-lg border border-green-100">
+                    <i data-lucide="check-circle" class="w-6 h-6"></i>
+                    <span>處理完成！JS 已成功分離並混淆。</span>
+                </div>
+
+                <div class="space-y-4">
+                    <div class="border rounded-lg overflow-hidden">
+                        <div class="bg-gray-100 px-4 py-2 border-b text-xs font-bold text-gray-500 flex justify-between">
+                            <span>PREVIEW: protected.js (前 500 字元)</span>
+                        </div>
+                        <pre id="previewJs" class="p-3 bg-gray-900 text-green-400 text-xs overflow-x-auto h-32 scrollbar-thin"></pre>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button id="btnDownloadZip" class="flex-1 bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-lg shadow transition-colors flex justify-center items-center gap-2">
+                            <i data-lucide="package" class="w-5 h-5"></i>
+                            下載懶人包 (.zip)
+                        </button>
+                    </div>
+                    <p class="text-center text-xs text-gray-400 mt-2">ZIP 內含：index.html (已修改引用路徑) + protected.js (混淆後程式碼)</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-gray-100 text-center py-6 text-gray-500 text-sm">
+        <p>⚠️ 注意：此工具僅處理內嵌 Script，不會處理外部 src 連結。</p>
+        <p class="mt-1">所有處理皆在瀏覽器本地完成，您的程式碼不會上傳至伺服器。</p>
+    </footer>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        const inputHtml = document.getElementById('inputHtml');
+        const btnProcess = document.getElementById('btnProcess');
+        const resultArea = document.getElementById('resultArea');
+        const previewJs = document.getElementById('previewJs');
+        const btnDownloadZip = document.getElementById('btnDownloadZip');
+
+        let processedHtml = '';
+        let processedJs = '';
+
+        btnProcess.addEventListener('click', async () => {
+            const htmlContent = inputHtml.value;
+            if (!htmlContent.trim()) {
+                alert('請先貼上 HTML 程式碼！');
+                return;
+            }
+
+            // UI Loading State
+            const originalBtnText = btnProcess.innerHTML;
+            btnProcess.innerHTML = `<i data-lucide="loader-2" class="animate-spin w-5 h-5"></i> 正在強力混淆中...`;
+            btnProcess.disabled = true;
+            lucide.createIcons();
+
+            // Allow UI to update
+            setTimeout(() => {
+                try {
+                    processCode(htmlContent);
+                    
+                    // Show Result
+                    resultArea.classList.remove('hidden');
+                    previewJs.textContent = processedJs.substring(0, 500) + (processedJs.length > 500 ? '...' : '');
+                    
+                    // Scroll to result
+                    resultArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+                } catch (err) {
+                    console.error(err);
+                    alert('混淆過程發生錯誤：' + err.message);
+                } finally {
+                    btnProcess.innerHTML = originalBtnText;
+                    btnProcess.disabled = false;
+                    lucide.createIcons();
+                }
+            }, 100);
+        });
+
+        function processCode(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const scripts = doc.querySelectorAll('script');
+            
+            let combinedJs = '';
+            let scriptCount = 0;
+
+            // 1. 提取所有 Inline JS
+            scripts.forEach(script => {
+                // 跳過有 src 的 (外部腳本) 和非 JS 的 type
+                if (script.src) return;
+                if (script.type && script.type !== 'text/javascript' && script.type !== 'application/javascript') return;
+
+                combinedJs += script.innerHTML + ';\n';
+                script.remove(); // 從 HTML DOM 中移除該標籤
+                scriptCount++;
+            });
+
+            if (combinedJs.trim() === '') {
+                throw new Error('找不到可混淆的內嵌 JavaScript (Inline Script)。');
+            }
+
+            // 2. 混淆 JS
+            const isAntiDebug = document.getElementById('optDebugProtect').checked;
+            const isSelfDefending = document.getElementById('optSelfDefending').checked;
+            const isStringEncrypt = document.getElementById('optStringEncrypt').checked;
+
+            const obfuscationResult = JavaScriptObfuscator.obfuscate(combinedJs, {
+                compact: document.getElementById('optCompact').checked,
+                controlFlowFlattening: document.getElementById('optFlatten').checked,
+                controlFlowFlatteningThreshold: 1,
+                numbersToExpressions: true,
+                simplify: true,
+                // String Array
+                stringArray: isStringEncrypt,
+                stringArrayEncoding: isStringEncrypt ? ['rc4'] : [],
+                splitStrings: true,
+                splitStringsChunkLength: 5,
+                // Risky Options
+                debugProtection: isAntiDebug,
+                debugProtectionInterval: isAntiDebug ? 4000 : 0,
+                disableConsoleOutput: isAntiDebug, // Usually goes hand-in-hand
+                selfDefending: isSelfDefending,
+                identifierNamesGenerator: 'hexadecimal'
+            });
+
+            processedJs = obfuscationResult.getObfuscatedCode();
+
+            // 3. 修改 HTML
+            // 在 body 結束前加入引用
+            const newScript = doc.createElement('script');
+            newScript.src = './protected.js';
+            
+            if (doc.body) {
+                doc.body.appendChild(newScript);
+            } else {
+                doc.documentElement.appendChild(newScript);
+            }
+
+            // 重新序列化 HTML (加上 DOCTYPE)
+            processedHtml = '<!DOCTYPE html>\n' + doc.documentElement.outerHTML;
+        }
+
+        // 下載 ZIP 功能
+        btnDownloadZip.addEventListener('click', async () => {
+            const zip = new JSZip();
+            
+            // 加入檔案
+            zip.file("index.html", processedHtml);
+            zip.file("protected.js", processedJs);
+            
+            // 產生 ZIP Blob
+            const content = await zip.generateAsync({type: "blob"});
+            
+            // 觸發下載
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(content);
+            a.download = "obfuscated_project.zip";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        });
+
+    </script>
+</body>
+</html>
