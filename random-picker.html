@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>命運抽籤器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Noto Sans TC', sans-serif;
+            background-color: #1a1a2e;
+            color: #e94560;
+            overflow-x: hidden;
+        }
+
+        .neon-text {
+            text-shadow: 0 0 10px #e94560, 0 0 20px #e94560, 0 0 40px #e94560;
+        }
+
+        .card-enter {
+            animation: flipIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            opacity: 0;
+            transform: rotateX(-90deg);
+        }
+
+        @keyframes flipIn {
+            0% { opacity: 0; transform: perspective(1000px) rotateX(-90deg) translateY(20px); }
+            100% { opacity: 1; transform: perspective(1000px) rotateX(0deg) translateY(0); }
+        }
+
+        .btn-glitch:active {
+            transform: scale(0.95);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #16213e; }
+        ::-webkit-scrollbar-thumb { background: #e94560; border-radius: 4px; }
+
+        .ranking-badge {
+            background: linear-gradient(135deg, #ff0055 0%, #ff5500 100%);
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.3);
+        }
+        
+        .name-card {
+            background: rgba(22, 33, 62, 0.8);
+            border: 1px solid #0f3460;
+            transition: all 0.3s ease;
+        }
+        
+        .name-card:hover {
+            transform: translateY(-2px);
+            border-color: #e94560;
+            box-shadow: 0 0 15px rgba(233, 69, 96, 0.3);
+        }
+
+        input[type=number]::-webkit-inner-spin-button {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4 relative">
+
+    <!-- Canvas for Confetti -->
+    <canvas id="confetti" class="fixed top-0 left-0 w-full h-full pointer-events-none z-50"></canvas>
+
+    <!-- Header -->
+    <header class="text-center mb-6 z-10">
+        <h1 class="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-yellow-500 mb-2 filter drop-shadow-lg">
+            <i class="fas fa-dice-d20 mr-3"></i>命運報告順序
+        </h1>
+        <p class="text-gray-400 text-lg">是壓軸登場？還是先大跳一波？</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full max-w-7xl z-10">
+        
+        <!-- Left Panel: Input & Controls -->
+        <div class="lg:col-span-3 bg-[#16213e] p-6 rounded-xl shadow-2xl border border-gray-700 flex flex-col h-[80vh]">
+            <h2 class="text-xl font-bold text-white mb-4 flex items-center">
+                <i class="fas fa-users-cog mr-2 text-yellow-400"></i> 名單與設定
+            </h2>
+            
+            <textarea id="inputNames" class="flex-1 w-full bg-[#0f3460] text-white p-3 rounded-lg border border-gray-600 focus:border-pink-500 focus:outline-none resize-none mb-4 text-sm" placeholder="請在此貼上名單...">
+陳大明
+林小美
+黃志強
+張雅婷
+李建國
+王淑芬
+趙正雄
+吳佩珊
+劉冠宇
+蔡宜君
+楊宗翰
+許家豪
+鄭婉婷
+謝佳穎
+郭怡君
+洪志明
+曾雅雯
+邱柏翰
+廖美惠
+徐國華
+賴心怡
+周建宏
+葉淑娟
+蘇俊傑
+莊秀英
+江怡萱
+呂志偉
+何筱涵
+羅家豪
+高郁婷</textarea>
+            
+            <!-- Settings Area -->
+            <div class="bg-[#0f3460] p-3 rounded-lg border border-gray-600 mb-4 space-y-3">
+                <div class="flex items-center justify-between">
+                    <span class="text-sm text-gray-300 font-bold"><i class="fas fa-list-ol mr-1"></i>每次抽取</span>
+                    <div class="flex items-center">
+                        <input type="number" id="batchSizeInput" value="5" min="1" max="50" class="w-16 bg-[#1a1a2e] text-white border border-gray-500 rounded-l px-2 py-1 text-center focus:outline-none focus:border-pink-500 text-sm">
+                        <span class="bg-gray-700 text-gray-300 px-2 py-1 rounded-r text-sm border border-l-0 border-gray-500">人</span>
+                    </div>
+                </div>
+
+                <div class="flex flex-col">
+                    <span class="text-sm text-gray-300 font-bold mb-1"><i class="fas fa-sort mr-1"></i>揭曉模式</span>
+                    <select id="drawModeInput" class="w-full bg-[#1a1a2e] text-white border border-gray-500 rounded px-2 py-1.5 text-sm focus:outline-none focus:border-pink-500">
+                        <option value="backward">倒著抽 (從最後一名開始)</option>
+                        <option value="forward">順著抽 (從第一名開始)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="text-gray-400 text-xs mb-2 text-center">
+                目前名單: <span id="countDisplay" class="text-pink-400 font-bold">30</span> 人
+            </div>
+
+            <button onclick="startShuffle()" class="btn-glitch w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-lg shadow-lg hover:from-blue-500 hover:to-purple-500 transition-all transform mb-2">
+                <i class="fas fa-random mr-2"></i> 開始命運洗牌
+            </button>
+            <button onclick="resetApp()" class="w-full py-2 bg-gray-700 text-gray-300 rounded-lg hover:bg-gray-600 text-sm transition-colors">
+                <i class="fas fa-trash-alt mr-2"></i> 重置所有
+            </button>
+        </div>
+
+        <!-- Center Panel: The Stage -->
+        <div class="lg:col-span-6 flex flex-col items-center justify-center relative">
+            
+            <!-- Welcome State -->
+            <div id="welcomeState" class="text-center p-10 bg-black/30 rounded-2xl border border-pink-500/30 backdrop-blur-sm">
+                <div class="text-6xl mb-4 animate-bounce">🎰</div>
+                <h3 class="text-2xl text-white font-bold mb-2">準備好了嗎？</h3>
+                <p class="text-gray-400">確認左側設定與名單後，<br>點擊「開始命運洗牌」</p>
+            </div>
+
+            <!-- Drawing State -->
+            <div id="drawingState" class="w-full h-full flex flex-col items-center hidden pt-4">
+                
+                <!-- Main Action Button -->
+                <!-- Note: Removed inline onclick to prevent conflicts -->
+                <div class="mb-6 relative group">
+                    <div class="absolute -inset-1 bg-gradient-to-r from-pink-600 to-purple-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
+                    <button id="drawBtn" class="relative w-56 h-56 rounded-full bg-[#1a1a2e] border-4 border-pink-500 text-white flex flex-col items-center justify-center hover:scale-105 transition-transform shadow-2xl overflow-hidden cursor-pointer z-20">
+                        <span class="text-4xl mb-2">🎲</span>
+                        <span class="text-xl font-bold">揭曉下一組</span>
+                        <span id="drawBtnSubtext" class="text-xs text-pink-400 mt-1">從後面數過來</span>
+                        <div id="remainingCount" class="absolute bottom-6 text-gray-500 text-xs">剩餘 ? 人</div>
+                    </button>
+                </div>
+
+                <!-- Current Batch Display -->
+                <div id="currentBatchContainer" class="w-full grid grid-cols-1 md:grid-cols-2 gap-3 px-2 pb-4 overflow-y-auto max-h-[50vh]">
+                    <!-- Cards will appear here -->
+                </div>
+            </div>
+
+            <!-- Finished State -->
+            <div id="finishedState" class="text-center p-10 hidden">
+                <div class="text-6xl mb-4">🎉</div>
+                <h3 class="text-3xl text-white font-bold mb-4">全員揭曉完畢！</h3>
+                <p class="text-xl text-yellow-400">祝大家期末報告順利！</p>
+                <button onclick="startShuffle()" class="mt-8 px-6 py-2 border border-pink-500 text-pink-500 rounded hover:bg-pink-500 hover:text-white transition-colors">
+                    再抽一次
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Panel: Result List -->
+        <div class="lg:col-span-3 bg-[#16213e] rounded-xl shadow-2xl border border-gray-700 flex flex-col h-[80vh] overflow-hidden">
+            <div class="p-4 bg-[#0f3460] border-b border-gray-600">
+                <h2 class="text-xl font-bold text-white flex items-center justify-between">
+                    <span><i class="fas fa-list-ol mr-2 text-green-400"></i> 已揭曉名單</span>
+                    <span id="modeBadge" class="text-xs bg-pink-600 px-2 py-1 rounded text-white">由後向前</span>
+                </h2>
+            </div>
+            <div id="resultList" class="flex-1 overflow-y-auto p-4 space-y-2">
+                <div class="text-center text-gray-500 mt-10 italic">
+                    <i class="fas fa-ghost mb-2 text-2xl"></i><br>
+                    目前還是一片空白...
+                </div>
+            </div>
+            <div class="p-2 bg-[#0f3460] text-center">
+                <button onclick="downloadResults()" class="text-blue-300 hover:text-white text-sm">
+                    <i class="fas fa-download mr-1"></i> 下載結果文字檔
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JS Logic -->
+    <script>
+        // --- 1. Global Variables & Init ---
+        let currentBatchSize = 5;
+        let drawMode = 'backward'; 
+        
+        let originalNames = [];
+        let shuffledList = []; 
+        let currentIndex = 0; 
+        let finishTimeout = null; // Store timeout ID to clear it later
+        
+        // UI Elements
+        let inputArea, countDisplay, canvas, ctx;
+        let particles = [];
+
+        // --- 2. Event Listeners & Setup ---
+        document.addEventListener('DOMContentLoaded', () => {
+            inputArea = document.getElementById('inputNames');
+            countDisplay = document.getElementById('countDisplay');
+            canvas = document.getElementById("confetti");
+            
+            if(canvas) {
+                ctx = canvas.getContext("2d");
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
+                requestAnimationFrame(animateConfetti);
+            }
+
+            if(inputArea) {
+                inputArea.addEventListener('input', () => {
+                    const list = getNamesFromInput();
+                    if(countDisplay) countDisplay.innerText = list.length;
+                });
+            }
+            
+            // Initial binding for drawBtn is not needed as it's hidden, 
+            // but we ensure clean state in startShuffle.
+        });
+
+        // --- 3. Core Functions ---
+
+        function getNamesFromInput() {
+            if(!inputArea) return [];
+            return inputArea.value.trim().split('\n').map(n => n.trim()).filter(n => n);
+        }
+
+        function startShuffle() {
+            try {
+                // CLEAR any pending finish timers from previous games
+                if (finishTimeout) {
+                    clearTimeout(finishTimeout);
+                    finishTimeout = null;
+                }
+
+                const names = getNamesFromInput();
+                if (names.length === 0) {
+                    alert("請先輸入名單！");
+                    return;
+                }
+
+                // Get Settings
+                const batchInput = document.getElementById('batchSizeInput');
+                const modeInput = document.getElementById('drawModeInput');
+                currentBatchSize = parseInt(batchInput.value) || 5;
+                if(currentBatchSize < 1) currentBatchSize = 1;
+                drawMode = modeInput.value;
+                
+                originalNames = names;
+                shuffledList = names.map((name) => ({ name: name, order: 0 }));
+                
+                // Fisher-Yates Shuffle
+                for (let i = shuffledList.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [shuffledList[i], shuffledList[j]] = [shuffledList[j], shuffledList[i]];
+                }
+
+                // Assign final order (1 to N)
+                shuffledList.forEach((item, index) => {
+                    item.order = index + 1;
+                });
+
+                // Initialize Pointer
+                if (drawMode === 'forward') {
+                    currentIndex = 0;
+                } else {
+                    currentIndex = shuffledList.length - 1;
+                }
+
+                // Update UI Labels
+                const modeText = drawMode === 'forward' ? '由前向後' : '由後向前';
+                document.getElementById('modeBadge').innerText = modeText;
+                
+                // --- RESET DRAW BUTTON ---
+                const btn = document.getElementById('drawBtn');
+                btn.innerHTML = `
+                        <span class="text-4xl mb-2">🎲</span>
+                        <span class="text-xl font-bold">揭曉下一組</span>
+                        <span id="drawBtnSubtext" class="text-xs text-pink-400 mt-1">${drawMode === 'forward' ? '從第 1 名開始' : '從最後一名開始'}</span>
+                        <div id="remainingCount" class="absolute bottom-6 text-gray-500 text-xs">剩餘 ? 人</div>`;
+                
+                // Remove all previous classes that might indicate disabled state
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                // Re-bind click event cleanly
+                btn.onclick = drawNextBatch; 
+
+                // State Transition
+                document.getElementById('welcomeState').classList.add('hidden');
+                document.getElementById('drawingState').classList.remove('hidden');
+                document.getElementById('finishedState').classList.add('hidden');
+                document.getElementById('resultList').innerHTML = ''; 
+                document.getElementById('currentBatchContainer').innerHTML = '';
+                
+                updateRemainingCount();
+                triggerConfetti(100, 1); 
+
+            } catch (e) {
+                console.error(e);
+                alert("洗牌時發生錯誤，請檢查名單格式。\n錯誤訊息: " + e.message);
+            }
+        }
+
+        function drawNextBatch() {
+            try {
+                // Double check if finished to prevent over-clicking errors
+                let isFinished = false;
+                if (drawMode === 'forward' && currentIndex >= shuffledList.length) isFinished = true;
+                if (drawMode === 'backward' && currentIndex < 0) isFinished = true;
+
+                if (isFinished) return;
+
+                const batchContainer = document.getElementById('currentBatchContainer');
+                batchContainer.innerHTML = ''; 
+                
+                let batch = [];
+
+                if (drawMode === 'forward') {
+                    let end = Math.min(shuffledList.length, currentIndex + currentBatchSize);
+                    for (let i = currentIndex; i < end; i++) {
+                        batch.push(shuffledList[i]);
+                    }
+                    currentIndex = end; 
+                    if (currentIndex >= shuffledList.length) isFinished = true;
+                } else {
+                    let start = Math.max(0, currentIndex - currentBatchSize + 1);
+                    for (let i = currentIndex; i >= start; i--) {
+                        batch.push(shuffledList[i]);
+                    }
+                    currentIndex = start - 1; 
+                    if (currentIndex < 0) isFinished = true;
+                }
+
+                // Render Batch
+                batch.forEach((student, idx) => {
+                    setTimeout(() => {
+                        const card = document.createElement('div');
+                        card.className = 'card-enter bg-white text-gray-900 rounded-lg p-3 md:p-4 shadow-xl flex items-center justify-between border-l-8 border-pink-500';
+                        
+                        let tagText = '';
+                        if (drawMode === 'forward') {
+                            tagText = `第 ${student.order} 位`;
+                        } else {
+                            const reverseRank = shuffledList.length - student.order + 1;
+                            tagText = `倒數第 ${reverseRank}`;
+                        }
+
+                        card.innerHTML = `
+                            <div class="flex items-center overflow-hidden">
+                                <span class="bg-gray-800 text-white rounded-full w-8 h-8 md:w-10 md:h-10 flex items-center justify-center font-bold mr-3 shadow shrink-0 text-sm md:text-base">
+                                    ${student.order}
+                                </span>
+                                <span class="text-lg md:text-xl font-bold truncate">${student.name}</span>
+                            </div>
+                            <span class="text-xs font-bold text-gray-500 bg-gray-200 px-2 py-1 rounded ml-2 shrink-0 whitespace-nowrap">${tagText}</span>
+                        `;
+                        batchContainer.appendChild(card);
+                        addToSidebar(student);
+                    }, idx * 150);
+                });
+
+                updateRemainingCount();
+
+                // Finish State Handling
+                if (isFinished) {
+                     const btn = document.getElementById('drawBtn');
+                     btn.innerHTML = `<span class="text-3xl">🏁</span><span class="text-xl font-bold mt-2">抽完啦</span>`;
+                     btn.classList.add('opacity-50', 'cursor-not-allowed');
+                     btn.onclick = null; // Disable click immediately
+                     
+                     // Delay finishing screen until cards are shown
+                     // Store ID so we can cancel if user hits restart
+                     finishTimeout = setTimeout(() => {
+                         triggerConfetti(500, 3);
+                         document.getElementById('drawingState').classList.add('hidden');
+                         document.getElementById('finishedState').classList.remove('hidden');
+                         finishTimeout = null;
+                     }, batch.length * 150 + 1200);
+                } else {
+                    triggerConfetti(50, 0.5);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("抽取時發生錯誤: " + e.message);
+            }
+        }
+
+        function addToSidebar(student) {
+            const list = document.getElementById('resultList');
+            const item = document.createElement('div');
+            item.className = 'name-card p-3 rounded flex items-center justify-between animate-pulse mb-2';
+            item.innerHTML = `
+                <span class="text-white font-medium truncate mr-2">${student.name}</span>
+                <span class="ranking-badge px-2 py-1 rounded text-sm min-w-[3rem] text-center">No.${student.order}</span>
+            `;
+            setTimeout(() => item.classList.remove('animate-pulse'), 1000);
+            list.insertBefore(item, list.firstChild);
+        }
+
+        function updateRemainingCount() {
+            let count = 0;
+            if (drawMode === 'forward') {
+                count = Math.max(0, shuffledList.length - currentIndex);
+            } else {
+                count = Math.max(0, currentIndex + 1);
+            }
+            
+            const el = document.getElementById('remainingCount');
+            if(el) el.innerText = `還有 ${count} 人未揭曉`;
+        }
+
+        function resetApp() {
+            if(confirm('確定要重置嗎？所有紀錄將消失！')) {
+                location.reload();
+            }
+        }
+
+        function downloadResults() {
+            if (shuffledList.length === 0) {
+                alert("還沒有結果可以下載");
+                return;
+            }
+            const sorted = [...shuffledList].sort((a, b) => a.order - b.order);
+            let content = "期末報告順序結果\n------------------\n";
+            sorted.forEach(s => {
+                content += `第 ${s.order} 位：${s.name}\n`;
+            });
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = "報告順序.txt";
+            a.click();
+        }
+
+        // --- 4. Visual Effects (Confetti) ---
+        function resizeCanvas() {
+            if(!canvas) return;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        function createParticle(x, y) {
+            const colors = ['#e94560', '#0f3460', '#fce38a', '#95e1d3', '#ffffff'];
+            return {
+                x: x, y: y,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                size: Math.random() * 8 + 4,
+                speedX: Math.random() * 6 - 3,
+                speedY: Math.random() * -6 - 2,
+                gravity: 0.1,
+                rotation: Math.random() * 360,
+                rotationSpeed: Math.random() * 4 - 2
+            };
+        }
+
+        function triggerConfetti(amount = 100, durationSec = 1) {
+            if(!canvas) return;
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            for (let i = 0; i < amount; i++) {
+                particles.push(createParticle(centerX, centerY + 100));
+            }
+        }
+
+        function animateConfetti() {
+            if(!ctx || !canvas) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particles.length; i++) {
+                const p = particles[i];
+                p.x += p.speedX; p.y += p.speedY; p.speedY += p.gravity; p.rotation += p.rotationSpeed;
+                ctx.save();
+                ctx.translate(p.x, p.y);
+                ctx.rotate(p.rotation * Math.PI / 180);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+                ctx.restore();
+                if (p.y > canvas.height) {
+                    particles.splice(i, 1); i--;
+                }
+            }
+            requestAnimationFrame(animateConfetti);
+        }
+    </script>
+</body>
+</html>
